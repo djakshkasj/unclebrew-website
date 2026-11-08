@@ -1,17 +1,26 @@
 /**
  * Uncle Brew - Supabase Integration Module
  * Handles database operations for customer orders, franchise applications, and custom brews
+ * Endpoint link & key are stored encrypted via UncleBrewSecurity (js/security.js)
  */
-
-const SUPABASE_DEFAULT_KEY = "sb_publishable_0cjPv3TRGj6S1RspcrAw8Q_lEWzwYKE";
-const SUPABASE_DEFAULT_URL = "https://ffrzekxmkaslpgudqemj.supabase.co";
 
 class UncleBrewSupabase {
   constructor() {
     this.client = null;
-    this.publishableKey = SUPABASE_DEFAULT_KEY;
-    // Loaded default URL configured with user's project
-    this.projectUrl = localStorage.getItem("unclebrew_supabase_url") || SUPABASE_DEFAULT_URL;
+    const cfg = window.brewSecurity ? window.brewSecurity.getSupabaseConfig() : { url: "", key: "" };
+    this.publishableKey = cfg.key;
+    const storedEncUrl = localStorage.getItem("unclebrew_supabase_url");
+    if (storedEncUrl && window.brewSecurity) {
+      this.projectUrl = storedEncUrl.startsWith("ENC_LINK:")
+        ? window.brewSecurity.decryptLink(storedEncUrl)
+        : storedEncUrl;
+      // Upgrade any legacy plaintext stored URL to encrypted form
+      if (!storedEncUrl.startsWith("ENC_LINK:")) {
+        localStorage.setItem("unclebrew_supabase_url", "ENC_LINK:" + window.brewSecurity.encryptLink(this.projectUrl));
+      }
+    } else {
+      this.projectUrl = cfg.url;
+    }
     this.isConnected = false;
 
     this.init();
@@ -41,7 +50,11 @@ class UncleBrewSupabase {
     cleanUrl = cleanUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
 
     this.projectUrl = cleanUrl;
-    localStorage.setItem("unclebrew_supabase_url", cleanUrl);
+    if (window.brewSecurity) {
+      localStorage.setItem("unclebrew_supabase_url", "ENC_LINK:" + window.brewSecurity.encryptLink(cleanUrl));
+    } else {
+      localStorage.setItem("unclebrew_supabase_url", cleanUrl);
+    }
     
     if (window.supabase) {
       try {

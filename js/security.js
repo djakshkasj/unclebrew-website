@@ -18,6 +18,10 @@
 class UncleBrewSecurity {
   constructor() {
     this._vaultSecret = "UB_CEBU_2026_AES256_CRYPTO_VAULT_KEY_v3";
+    this._linkCipherKey = "UB_CIPHER_2026_CEBU";
+    // Encrypted Supabase Project Link & Key (Never stored in plaintext in source code)
+    this._encSupabaseUrl = "PTYrMzpqZ2o0OUBKV10nLi4jJjkyODYtIS0oOHFBRUJXPSI2J3s2LQ==";
+    this._encSupabaseKey = "JiAAMzwyJCwhN1NSXlMAcyYoBSNxCxEOOn4WYw1BQFFEHjR9Ewo5Bwg5PgkDAA==";
     this._cachedAesKey = null;
 
     // Strict SQL Injection (SQLi) detection patterns
@@ -46,10 +50,113 @@ class UncleBrewSecurity {
 
   init() {
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => this.attachInputFirewall());
+      document.addEventListener("DOMContentLoaded", () => {
+        this.attachInputFirewall();
+        this.applyEncryptedAddressBar();
+      });
     } else {
       this.attachInputFirewall();
+      this.applyEncryptedAddressBar();
     }
+  }
+
+  // ── 0. Encrypted Link & Endpoint Cipher Engine ────────────────────────────
+  encryptLink(plainText) {
+    if (!plainText) return "";
+    const key = this._linkCipherKey;
+    const inputBytes = new TextEncoder().encode(String(plainText));
+    const keyBytes = new TextEncoder().encode(key);
+    const out = new Uint8Array(inputBytes.length);
+    for (let i = 0; i < inputBytes.length; i++) {
+      out[i] = inputBytes[i] ^ keyBytes[i % keyBytes.length];
+    }
+    return this._bufToBase64(out.buffer);
+  }
+
+  decryptLink(cipherB64) {
+    if (!cipherB64) return "";
+    try {
+      const cleanB64 = String(cipherB64).replace(/^ENC_LINK:/, "");
+      const inputBytes = new Uint8Array(this._base64ToBuf(cleanB64));
+      const keyBytes = new TextEncoder().encode(this._linkCipherKey);
+      const out = new Uint8Array(inputBytes.length);
+      for (let i = 0; i < inputBytes.length; i++) {
+        out[i] = inputBytes[i] ^ keyBytes[i % keyBytes.length];
+      }
+      return new TextDecoder().decode(out);
+    } catch (e) {
+      return cipherB64;
+    }
+  }
+
+  /**
+   * Decodes the encrypted Supabase endpoint link and publishable key in memory at runtime
+   */
+  getSupabaseConfig() {
+    return {
+      url: this.decryptLink(this._encSupabaseUrl),
+      key: this.decryptLink(this._encSupabaseKey)
+    };
+  }
+
+  /**
+   * Builds an encrypted navigation link (e.g. index.html?ub_link=...)
+   * so query parameters and session routing are encrypted in the URL bar.
+   */
+  buildEncryptedPageUrl(pagePath, paramsObj = {}) {
+    const payload = {
+      ...paramsObj,
+      t: Date.now(),
+      v: "ENCv3"
+    };
+    const token = encodeURIComponent(this.encryptLink(JSON.stringify(payload)));
+    return `${pagePath}?ub_link=${token}`;
+  }
+
+  /**
+   * Reads & decrypts ?ub_link=... parameters from the current browser URL
+   * while remaining backward-compatible with standard query parameters.
+   */
+  getDecryptedUrlParams() {
+    const searchParams = new URLSearchParams(window.location.search);
+    const result = {};
+    for (const [k, v] of searchParams.entries()) {
+      result[k] = v;
+    }
+    const encToken = searchParams.get("ub_link");
+    if (encToken) {
+      try {
+        const decodedJson = this.decryptLink(decodeURIComponent(encToken));
+        const parsed = JSON.parse(decodedJson);
+        if (parsed && typeof parsed === "object") {
+          Object.assign(result, parsed);
+        }
+      } catch (e) {}
+    }
+    return result;
+  }
+
+  /**
+   * Masks the browser address bar link with an encrypted session token (?ub_link=...)
+   * and intercepts internal page links so URLs stay encrypted.
+   */
+  applyEncryptedAddressBar() {
+    try {
+      // Cache decrypted params on window before masking address bar
+      this._decryptedUrlParams = this.getDecryptedUrlParams();
+
+      const currentSearch = new URLSearchParams(window.location.search);
+      if (!currentSearch.has("ub_link")) {
+        const tokenPayload = {
+          p: window.location.pathname.split("/").pop() || "index.html",
+          preview: this._decryptedUrlParams.preview || undefined,
+          s: Math.random().toString(36).slice(2, 8)
+        };
+        const encToken = encodeURIComponent(this.encryptLink(JSON.stringify(tokenPayload)));
+        const newUrl = `${window.location.pathname}?ub_link=${encToken}${window.location.hash || ""}`;
+        window.history.replaceState({ encrypted: true }, "", newUrl);
+      }
+    } catch (e) {}
   }
 
   // ── 1. HTML Entity Escaping (Prevents DOM XSS) ─────────────────────────────

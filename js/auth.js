@@ -9,9 +9,6 @@
  *  5. Auto-populate user identity into Checkout & Loyalty Stamps
  */
 
-const _AUTH_URL = "https://ffrzekxmkaslpgudqemj.supabase.co";
-const _AUTH_KEY = "sb_publishable_0cjPv3TRGj6S1RspcrAw8Q_lEWzwYKE";
-
 class BrewAuth {
   constructor() {
     this.client = null;
@@ -37,7 +34,12 @@ class BrewAuth {
     try {
       await this._waitForSupabaseSDK();
       // Reuse the existing Supabase client from window.uncleBrewSupabase to avoid duplicate GoTrueClient instances
-      this.client = window.uncleBrewSupabase?.client || window.supabase.createClient(_AUTH_URL, _AUTH_KEY);
+      if (window.uncleBrewSupabase?.client) {
+        this.client = window.uncleBrewSupabase.client;
+      } else if (window.brewSecurity) {
+        const cfg = window.brewSecurity.getSupabaseConfig();
+        this.client = window.supabase.createClient(cfg.url, cfg.key);
+      }
     } catch (e) {
       console.warn("[BrewAuth] Proceeding with local session support:", e);
     }
@@ -153,7 +155,10 @@ class BrewAuth {
 
   _redirectToLanding() {
     if (!window.location.pathname.includes("landing.html")) {
-      window.location.href = "landing.html";
+      const target = window.brewSecurity
+        ? window.brewSecurity.buildEncryptedPageUrl("landing.html", { r: "auth" })
+        : "landing.html";
+      window.location.href = target;
     }
   }
 
@@ -238,7 +243,7 @@ class BrewAuth {
             Brew Studio
           </a>
 
-          <a href="landing.html?preview=1" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#4F2E1E] hover:bg-[#FAF7F2] hover:text-[#C2782A] transition-colors">
+          <a href="${window.brewSecurity ? window.brewSecurity.buildEncryptedPageUrl('landing.html', { preview: '1' }) : 'landing.html?preview=1'}" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#4F2E1E] hover:bg-[#FAF7F2] hover:text-[#C2782A] transition-colors">
             <i data-lucide="home" class="w-4 h-4 text-[#C2782A]"></i>
             View Landing Page
           </a>
@@ -272,7 +277,10 @@ class BrewAuth {
       if (this.client) {
         try { await this.client.auth.signOut(); } catch (e) {}
       }
-      window.location.href = "landing.html";
+      const target = window.brewSecurity
+        ? window.brewSecurity.buildEncryptedPageUrl("landing.html", { out: "1" })
+        : "landing.html";
+      window.location.href = target;
     });
 
     document.getElementById("btn-view-orders")?.addEventListener("click", () => {

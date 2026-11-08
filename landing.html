@@ -1234,16 +1234,21 @@
     }
   </script>
 
-  <!-- Auth System -->
+  <!-- Auth System (Uses Encrypted Endpoint Link & Encrypted URL Routing via js/security.js) -->
   <script>
-    const SUPABASE_URL = "https://ffrzekxmkaslpgudqemj.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_0cjPv3TRGj6S1RspcrAw8Q_lEWzwYKE";
-
     class AuthSystem {
       constructor() {
-        this.client = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+        const cfg = window.brewSecurity ? window.brewSecurity.getSupabaseConfig() : { url: "", key: "" };
+        this.client = (window.supabase && cfg.url) ? window.supabase.createClient(cfg.url, cfg.key) : null;
         this.activeTab = 'signin';
         this.init();
+      }
+
+      _navigateToPortal(brewerId = "") {
+        const target = window.brewSecurity
+          ? window.brewSecurity.buildEncryptedPageUrl('index.html', { bid: brewerId, auth: 1 })
+          : 'index.html';
+        window.location.href = target;
       }
 
       static generateBrewerId(seedStr = "") {
@@ -1258,30 +1263,32 @@
       }
 
       async init() {
-        const params = new URLSearchParams(window.location.search);
-        const isPreview = params.get('preview') === '1';
+        const params = window.brewSecurity
+          ? window.brewSecurity.getDecryptedUrlParams()
+          : Object.fromEntries(new URLSearchParams(window.location.search).entries());
+        const isPreview = String(params.preview) === '1';
 
         if (!isPreview) {
           if (this.client) {
             try {
               const { data: { session } } = await this.client.auth.getSession();
               if (session?.user) {
-                await this.saveLocalSession(session.user.id, session.user.email, session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
-                window.location.href = 'index.html';
+                const profile = await this.saveLocalSession(session.user.id, session.user.email, session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
+                this._navigateToPortal(profile.brewer_id);
                 return;
               }
             } catch (e) {}
           }
           const existingLocal = await window.brewSecurity?.getSecureStorage('unclebrew_user_session');
           if (existingLocal && existingLocal.id) {
-            window.location.href = 'index.html';
+            this._navigateToPortal(existingLocal.brewer_id);
             return;
           }
         }
 
         this.bindEvents();
         this.renderActiveTab();
-        if (params.get('auth') === 'signup') this.openModal('signup');
+        if (params.auth === 'signup') this.openModal('signup');
       }
 
       async saveLocalSession(id, email, fullName) {
@@ -1429,7 +1436,7 @@
               const name = data.user.user_metadata?.full_name || email.split('@')[0];
               const profile = await this.saveLocalSession(data.user.id, email, name);
               this.showMessage('signin', `🔒 Authenticated! Welcome back, ${name} (${profile.brewer_id})`, 'success');
-              setTimeout(() => window.location.href = 'index.html', 750);
+              setTimeout(() => this._navigateToPortal(profile.brewer_id), 750);
               return;
             }
           }
@@ -1450,7 +1457,7 @@
               }
               const profile = await this.saveLocalSession(u.id, email, u.full_name);
               this.showMessage('signin', `🔒 Verified via PBKDF2-SHA256! Welcome, ${u.full_name} (${profile.brewer_id})`, 'success');
-              setTimeout(() => window.location.href = 'index.html', 750);
+              setTimeout(() => this._navigateToPortal(profile.brewer_id), 750);
               return;
             }
           }
@@ -1521,7 +1528,7 @@
         const profile = await this.saveLocalSession(userId, email, name);
         this.setLoading('form-signup', false);
         this.showMessage('signup', `🔒 Encrypted Account Created! Brewer ID: ${profile.brewer_id}. Entering café...`, 'success');
-        setTimeout(() => window.location.href = 'index.html', 950);
+        setTimeout(() => this._navigateToPortal(profile.brewer_id), 950);
       }
 
       async handleQuickGuest() {
@@ -1531,7 +1538,7 @@
         const brewerId = AuthSystem.generateBrewerId(email);
         const profile = await this.saveLocalSession(`user-${brewerId.toLowerCase()}`, email, name);
         this.showMessage(this.activeTab, `⚡ Instant Brewer Pass (AES-256 Encrypted) activated! ID: ${profile.brewer_id}`, 'success');
-        setTimeout(() => window.location.href = 'index.html', 650);
+        setTimeout(() => this._navigateToPortal(profile.brewer_id), 650);
       }
 
       async handleReset() {
@@ -1548,7 +1555,7 @@
         this.setLoading('form-reset', true);
         if (this.client) {
           const { error } = await this.client.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + '/index.html'
+            redirectTo: new URL('index.html', window.location.href).href
           });
           this.setLoading('form-reset', false);
           if (error) { this.showMessage('reset', error.message); return; }
@@ -1561,7 +1568,7 @@
         if (!this.client) return;
         await this.client.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: window.location.origin + '/index.html' }
+          options: { redirectTo: new URL('index.html', window.location.href).href }
         });
       }
     }
