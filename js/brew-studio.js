@@ -295,6 +295,9 @@ class BrewStudio {
     };
 
     if (window.brewCart) {
+      const addBtn = document.getElementById("btn-studio-add-cart");
+      if (window.flyToCart && addBtn) window.flyToCart(addBtn, '🎨');
+
       window.brewCart.addItem(customItem, 1, customItem.customDetails);
       if (window.confetti) {
         window.confetti({

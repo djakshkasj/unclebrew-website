@@ -56,7 +56,9 @@ class BaristaLab {
 
     const fillMeter = document.getElementById("barista-grind-meter");
     const beansAnim = document.getElementById("barista-beans-anim");
+    const machineStation = document.querySelector("#barista-lab .md\\:col-span-5");
 
+    if (machineStation) machineStation.classList.add("animate-machine-wobble");
     if (beansAnim) beansAnim.classList.add("animate-bounce");
     if (fillMeter) {
       fillMeter.style.width = "0%";
@@ -64,6 +66,7 @@ class BaristaLab {
     }
 
     setTimeout(() => {
+      if (machineStation) machineStation.classList.remove("animate-machine-wobble");
       this.isGrinding = false;
       this.currentStep = 2;
       this.updateUI();
@@ -140,6 +143,9 @@ class BaristaLab {
   }
 
   applyRewardVoucher() {
+    const btn = document.getElementById("barista-apply-voucher-btn");
+    if (window.flyToCart && btn) window.flyToCart(btn, '✨');
+
     if (window.brewCart) {
       // Add voucher code UNCLE39 automatically
       const res = window.brewCart.applyVoucher("UNCLE39");
@@ -362,6 +368,7 @@ class BrewMoodQuiz {
         const orderBtn = document.getElementById("btn-order-quiz-match");
         if (orderBtn) {
           orderBtn.onclick = () => {
+            if (window.flyToCart) window.flyToCart(orderBtn, '☕');
             if (window.brewCart) {
               window.brewCart.addItem(match, 1, { size: "22oz (Large)", sweetness: "50%", ice: "Standard Ice" });
               window.brewCart.openDrawer();

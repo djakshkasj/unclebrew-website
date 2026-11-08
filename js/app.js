@@ -417,6 +417,9 @@ class UncleBrewApp {
       price: finalPrice
     };
 
+    const confirmBtn = document.getElementById("btn-modal-add-to-cart");
+    if (window.flyToCart && confirmBtn) window.flyToCart(confirmBtn, '☕');
+
     this.cart.addItem(cartProduct, 1, customDetails);
     modal.classList.add("hidden");
 
