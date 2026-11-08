@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uncle Brew PH — Specialty Coffee & Refreshers</title>
+  <meta name="description" content="Born in Cebu. Brewed for Filipinos. Specialty coffee starting at ₱39. 150+ branches nationwide." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- CDNs -->
+  <script>
+    const _origWarn = console.warn;
+    console.warn = function(...args) {
+      if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+      return _origWarn.apply(console, args);
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream:    '#FAF7F2',
+            espresso: '#24140B',
+            bark:     '#634F44',
+            caramel:  '#C2782A',
+            latte:    '#E8DDCE',
+            foam:     '#F5EFE6',
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans:  ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    * { font-family: 'Plus Jakarta Sans', sans-serif; }
+    h1, h2, h3, .font-serif { font-family: 'Playfair Display', Georgia, serif; }
+
+    /* Auth modal animation */
+    .auth-modal-card {
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
+    }
+    .auth-modal-card.modal-visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Tab active state */
+    .tab-active {
+      background: #24140B !important;
+      color: white !important;
+    }
+
+    /* Scroll reveal */
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal-item.is-revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Frosted nav */
+    .nav-frosted {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(232, 221, 206, 0.6);
+    }
+
+    /* Steam wisps */
+    @keyframes steamRise {
+      0%   { opacity: 0; transform: translateY(0) scaleX(1); }
+      40%  { opacity: 0.6; }
+      100% { opacity: 0; transform: translateY(-28px) scaleX(1.4); }
+    }
+    .steam-wisp {
+      animation: steamRise 2.4s ease-in-out infinite;
+    }
+    .steam-wisp:nth-child(2) { animation-delay: 0.6s; }
+    .steam-wisp:nth-child(3) { animation-delay: 1.2s; }
+
+    /* Gradient text */
+    .text-gradient {
+      background: linear-gradient(135deg, #C2782A 0%, #E8A44A 50%, #C2782A 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Ping dot */
+    @keyframes ping-custom {
+      75%, 100% { transform: scale(1.8); opacity: 0; }
+    }
+    .ping-custom { animation: ping-custom 1.3s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+    /* Smooth scroll */
+    html { scroll-behavior: smooth; }
+
+    /* Card hover */
+    .drink-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(36,20,11,0.12); }
+    .drink-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+
+    .feature-card:hover { border-color: #C2782A; transform: translateY(-2px); }
+    .feature-card { transition: border-color 0.25s ease, transform 0.25s ease; }
+
+    /* Password toggle */
+    .password-wrapper { position: relative; }
+    .password-wrapper input { padding-right: 2.5rem; }
+    .toggle-pw {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #634F44;
+    }
+
+    /* ── 3D Branch Coverflow Carousel & Filmstrip ── */
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
+    .branch-carousel-stage {
+      perspective: 1400px;
+      position: relative;
+      min-height: 440px;
+    }
+
+    .branch-slide-card {
+      transition:
+        transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.6s ease,
+        box-shadow 0.6s ease;
+      will-change: transform, opacity, filter;
+      transform-style: preserve-3d;
+    }
+
+    .branch-slide-card.is-active {
+      position: relative !important;
+      z-index: 30;
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1) rotateY(0deg);
+      filter: blur(0px) brightness(1);
+    }
+
+    .branch-slide-card.is-prev {
+      position: absolute !important;
+      top: 1rem;
+      z-index: 20;
+      opacity: 0.55;
+      transform: translate3d(-58%, 0, -140px) scale(0.84) rotateY(18deg);
+      filter: blur(1.5px) brightness(0.9);
+      cursor: pointer;
+    }
+
+    .branch-slide-card.is-next {
+      position: absolute !important;
+      top: 1rem;
+      z-index: 20;
+      opacity: 0.55;
+      transform: translate3d(58%, 0, -140px) scale(0.84) rotateY(-18deg);
+      filter: blur(1.5px) brightness(0.9);
+      cursor: pointer;
+    }
+
+    .branch-slide-card.is-hidden {
+      position: absolute !important;
+      top: 1rem;
+      z-index: 5;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(0, 20px, -260px) scale(0.72);
+      filter: blur(4px);
+    }
+
+    @media (max-width: 1023px) {
+      .branch-carousel-stage {
+        min-height: 0;
+      }
+      .branch-slide-card.is-prev,
+      .branch-slide-card.is-next {
+        opacity: 0;
+        pointer-events: none;
+        transform: translate3d(0, 0, -120px) scale(0.92);
+      }
+    }
+
+    @keyframes kenBurnsZoom {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.09); }
+    }
+
+    .branch-slide-card.is-active .branch-hero-img {
+      animation: kenBurnsZoom 6s ease-out forwards;
+    }
+
+    .branch-thumb-btn {
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .branch-thumb-btn.active-thumb {
+      transform: translateY(-5px) scale(1.03);
+      border-color: #C2782A !important;
+      box-shadow: 0 12px 24px -6px rgba(194, 120, 42, 0.35);
+    }
+
+    /* Infinite Branch Photo Marquee */
+    @keyframes branchMarqueeScroll {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-50%, 0, 0); }
+    }
+
+    .branch-marquee-track {
+      display: flex;
+      width: max-content;
+      animation: branchMarqueeScroll 36s linear infinite;
+    }
+
+    .branch-marquee-track:hover {
+      animation-play-state: paused;
+    }
+  </style>
+</head>
+
+<body class="bg-cream text-espresso antialiased">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       1 & 2. UNIFIED STICKY HEADER (ANNOUNCEMENT BAR + RESPONSIVE NAV)
+  ═══════════════════════════════════════════════════════════ -->
+  <header class="sticky top-0 z-50">
+    <!-- Top Announcement Bar -->
+    <div class="bg-espresso text-white">
+      <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2 text-[11px] sm:text-xs">
+        <!-- Left -->
+        <div class="flex items-center gap-1.5 text-latte/90 truncate">
+          <span class="relative flex h-2 w-2 shrink-0">
+            <span class="ping-custom absolute inline-flex h-full w-full rounded-full bg-caramel opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-caramel"></span>
+          </span>
+          <span class="truncate"><span class="hidden sm:inline">Cebu Flagship • </span>Serving at <strong class="text-white">150+ Branches</strong></span>
+        </div>
+        <!-- Center -->
+        <div class="font-semibold tracking-wide text-center flex-1 hidden md:block">
+          ☕ Everyday Special: Use code <span class="bg-caramel text-white px-2 py-0.5 rounded font-bold tracking-wider mx-1">UNCLE39</span> for <strong>₱39 OFF!</strong>
+        </div>
+        <!-- Right -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button data-auth-open="signin" class="text-white/90 hover:text-white border border-white/30 hover:border-white px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all">
+            Sign In
+          </button>
+          <button data-auth-open="signup" class="bg-caramel hover:bg-amber-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all">
+            Join Free
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <nav class="nav-frosted">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+        <!-- Logo -->
+        <a href="#" class="flex items-center gap-2.5 shrink-0">
+          <div class="w-9 h-9 bg-espresso rounded-xl flex items-center justify-center">
+            <i data-lucide="coffee" class="text-caramel w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="font-serif font-bold text-espresso text-sm sm:text-base leading-none tracking-wide">UNCLE BREW PH</div>
+            <div class="text-bark text-[10px] font-medium leading-none mt-0.5">Specialty Coffee & Refreshers</div>
+          </div>
+        </a>
+
+        <!-- Desktop Nav Links -->
+        <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-bark">
+          <a href="#menu-preview" class="hover:text-caramel transition-colors">Menu</a>
+          <a href="#branches" class="hover:text-caramel transition-colors flex items-center gap-1 font-semibold text-espresso">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-caramel"></i>
+            <span>Our Branches</span>
+          </a>
+          <a href="#story" class="hover:text-caramel transition-colors">Our Story</a>
+          <a href="#testimonials" class="hover:text-caramel transition-colors">Reviews</a>
+          <a href="#franchise" class="hover:text-caramel transition-colors">Franchise</a>
+        </div>
+
+        <!-- Right Buttons + Mobile Hamburger -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button data-auth-open="signin" class="hidden sm:inline-flex items-center border border-latte hover:border-caramel text-espresso hover:text-caramel px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200">
+            Sign In
+          </button>
+          <button data-auth-open="signup" class="bg-espresso hover:bg-bark text-white px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 shadow-md shadow-espresso/20">
+            Order Now
+          </button>
+          <button id="landing-mobile-menu-btn" type="button" aria-label="Open Mobile Menu"
+            class="lg:hidden p-2 rounded-xl bg-cream border border-latte text-espresso hover:border-caramel transition-colors">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Slide-Down Drawer -->
+      <div id="landing-mobile-drawer" class="hidden lg:hidden bg-white border-t border-latte px-5 py-4 space-y-2.5 shadow-xl">
+        <a href="#menu-preview" class="landing-mobile-link flex items-center gap-2.5 py-2 text-sm font-bold text-espresso hover:text-caramel border-b border-latte/50">
+          <i data-lucide="coffee" class="w-4 h-4 text-caramel"></i> Menu Preview
+        </a>
+        <a href="#branches" class="landing-mobile-link flex items-center gap-2.5 py-2 text-sm font-bold text-espresso hover:text-caramel border-b border-latte/50">
+          <i data-lucide="map-pin" class="w-4 h-4 text-caramel"></i> Nationwide Branches (Carousel)
+        </a>
+        <a href="#story" class="landing-mobile-link flex items-center gap-2.5 py-2 text-sm font-bold text-espresso hover:text-caramel border-b border-latte/50">
+          <i data-lucide="book-open" class="w-4 h-4 text-caramel"></i> Our Story
+        </a>
+        <a href="#testimonials" class="landing-mobile-link flex items-center gap-2.5 py-2 text-sm font-bold text-espresso hover:text-caramel border-b border-latte/50">
+          <i data-lucide="star" class="w-4 h-4 text-caramel"></i> Customer Reviews
+        </a>
+        <a href="#franchise" class="landing-mobile-link flex items-center gap-2.5 py-2 text-sm font-bold text-espresso hover:text-caramel pb-1">
+          <i data-lucide="store" class="w-4 h-4 text-caramel"></i> Franchise Opportunity
+        </a>
+        <div class="pt-2 grid grid-cols-2 gap-2.5">
+          <button data-auth-open="signin" class="py-2.5 rounded-xl border border-latte bg-cream text-espresso font-bold text-xs">
+            Sign In
+          </button>
+          <button data-auth-open="signup" class="py-2.5 rounded-xl bg-caramel text-white font-bold text-xs shadow">
+            Create Free Account
+          </button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       3. HERO SECTION
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="hero" class="bg-cream min-h-[85vh] flex items-center py-12 sm:py-20 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <div class="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
+
+        <!-- Left Text -->
+        <div class="reveal-item">
+          <!-- Pill Badge -->
+          <div class="inline-flex items-center gap-2 bg-foam border border-latte text-bark rounded-full px-3.5 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold mb-5 sm:mb-6 shadow-sm">
+            <span class="w-2 h-2 bg-caramel rounded-full shrink-0"></span>
+            <span>Born in Cebu • The ₱39 Everyday Coffee Revolution</span>
+          </div>
+
+          <!-- H1 -->
+          <h1 class="font-serif text-4xl sm:text-6xl lg:text-7xl font-black text-espresso leading-[1.08] mb-5 sm:mb-6">
+            Crafted for<br/>Hustlers.<br/>
+            <span class="text-gradient">Brewed for<br/>Filipinos.</span>
+          </h1>
+
+          <!-- Subtext -->
+          <p class="text-bark text-base sm:text-lg leading-relaxed mb-7 sm:mb-8 max-w-lg">
+            From our legendary ₱39 roots in Cebu to 150+ branches nationwide — Uncle Brew is your everyday ritual, your coffee identity, your reward after the hustle.
+          </p>
+
+          <!-- CTAs -->
+          <div class="flex flex-col sm:flex-row gap-3 mb-8 sm:mb-10">
+            <button data-auth-open="signup" class="w-full sm:w-auto bg-espresso hover:bg-bark text-white px-7 py-3.5 rounded-2xl font-bold text-sm sm:text-base shadow-lg shadow-espresso/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+              Order Now — Join Free
+            </button>
+            <a href="#branches" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 border-2 border-latte hover:border-caramel text-espresso hover:text-caramel px-7 py-3.5 rounded-2xl font-bold text-sm sm:text-base transition-all duration-200">
+              Explore Branches
+              <i data-lucide="map-pin" class="w-4 h-4 text-caramel"></i>
+            </a>
+          </div>
+
+          <!-- Proof Metrics -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            <div class="bg-white border border-latte rounded-2xl p-3.5 sm:p-4 text-center shadow-sm">
+              <div class="font-serif font-bold text-xl sm:text-2xl text-caramel">150+</div>
+              <div class="text-bark text-[11px] sm:text-xs font-medium mt-0.5">Branches</div>
+            </div>
+            <div class="bg-white border border-latte rounded-2xl p-3.5 sm:p-4 text-center shadow-sm">
+              <div class="font-serif font-bold text-xl sm:text-2xl text-caramel">35K+</div>
+              <div class="text-bark text-[11px] sm:text-xs font-medium mt-0.5">Cups Daily</div>
+            </div>
+            <div class="bg-white border border-latte rounded-2xl p-3.5 sm:p-4 text-center shadow-sm">
+              <div class="font-serif font-bold text-xl sm:text-2xl text-caramel">100%</div>
+              <div class="text-bark text-[11px] sm:text-xs font-medium mt-0.5">Benguet</div>
+            </div>
+            <div class="bg-white border border-latte rounded-2xl p-3.5 sm:p-4 text-center shadow-sm">
+              <div class="font-serif font-bold text-xl sm:text-2xl text-caramel">4.9★</div>
+              <div class="text-bark text-[11px] sm:text-xs font-medium mt-0.5">Avg Rating</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Featured Cup -->
+        <div class="reveal-item flex justify-center lg:justify-end relative px-1 sm:px-0">
+          <div class="relative w-full max-w-sm">
+            <!-- Glow -->
+            <div class="absolute inset-0 bg-caramel/15 rounded-[2.5rem] blur-3xl scale-105"></div>
+
+            <!-- Card -->
+            <div class="relative bg-white border-2 border-latte rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl shadow-espresso/15">
+              <!-- Steam Wisps -->
+              <div class="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                <svg class="steam-wisp w-4 h-6 text-white/40" viewBox="0 0 16 24" fill="none">
+                  <path d="M8 20 Q4 14 8 8 Q12 2 8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <svg class="steam-wisp w-4 h-6 text-white/40" viewBox="0 0 16 24" fill="none" style="animation-delay:0.6s">
+                  <path d="M8 20 Q12 14 8 8 Q4 2 8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <svg class="steam-wisp w-4 h-6 text-white/40" viewBox="0 0 16 24" fill="none" style="animation-delay:1.2s">
+                  <path d="M8 20 Q4 14 8 8 Q12 2 8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <img
+                src="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=700&q=80"
+                alt="Uncle Brew Specialty Coffee"
+                class="w-full h-72 sm:h-80 object-cover"
+              />
+              <!-- Overlay badges -->
+              <div class="absolute top-4 right-4 bg-white/90 backdrop-blur border border-latte rounded-2xl px-3 py-1.5 shadow-lg">
+                <div class="text-xs font-bold text-espresso">Fresh Microfoam</div>
+                <div class="text-[10px] text-bark">Steamed to perfection</div>
+              </div>
+              <div class="absolute bottom-24 left-4 bg-caramel text-white rounded-2xl px-3 py-1.5 shadow-lg">
+                <div class="text-xs font-bold">100% Arabica</div>
+                <div class="text-[10px] opacity-85">Benguet Highlands</div>
+              </div>
+              <!-- Bottom card info -->
+              <div class="p-4 sm:p-5 bg-white">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="font-serif font-bold text-espresso text-base sm:text-lg">Spanish Latte</div>
+                    <div class="text-bark text-xs sm:text-sm">Signature Series</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-bold text-caramel text-lg sm:text-xl">₱89</div>
+                    <div class="text-bark text-xs">Regular size</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating badge bottom right (safe inset on mobile) -->
+            <div class="absolute -bottom-3 right-2 sm:-bottom-4 sm:-right-4 bg-espresso text-white rounded-2xl px-4 py-2.5 sm:py-3 shadow-xl text-center">
+              <div class="text-[10px] sm:text-xs font-semibold opacity-70">Starting at</div>
+              <div class="font-serif font-black text-caramel text-xl sm:text-2xl leading-none">₱39</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       4. WHY JOIN UNCLE BREW
+  ═══════════════════════════════════════════════════════════ -->
+  <section class="bg-white py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="text-center mb-14 reveal-item">
+        <div class="inline-flex items-center gap-2 bg-foam border border-latte rounded-full px-4 py-1.5 text-xs font-semibold text-bark mb-4">
+          <i data-lucide="user-check" class="w-3.5 h-3.5 text-caramel"></i>
+          Free Account Benefits
+        </div>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-espresso mb-3">Your Brew, Your Identity</h2>
+        <p class="text-bark text-lg max-w-xl mx-auto">Create a free account to unlock your personal café experience</p>
+      </div>
+
+      <!-- Feature Cards -->
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+        <div class="feature-card reveal-item bg-cream border border-latte rounded-3xl p-6 cursor-default">
+          <div class="w-12 h-12 bg-caramel/10 rounded-2xl flex items-center justify-center mb-5 text-2xl">🎯</div>
+          <h3 class="font-serif font-bold text-espresso text-lg mb-2">Personalized Orders</h3>
+          <p class="text-bark text-sm leading-relaxed">Your customizations, sweetness, and size remembered for every visit — just the way you like it.</p>
+        </div>
+        <div class="feature-card reveal-item bg-cream border border-latte rounded-3xl p-6 cursor-default" style="transition-delay:0.1s">
+          <div class="w-12 h-12 bg-caramel/10 rounded-2xl flex items-center justify-center mb-5 text-2xl">📦</div>
+          <h3 class="font-serif font-bold text-espresso text-lg mb-2">Order History</h3>
+          <p class="text-bark text-sm leading-relaxed">Track every brew you've ever ordered and re-order your favorites in one click.</p>
+        </div>
+        <div class="feature-card reveal-item bg-cream border border-latte rounded-3xl p-6 cursor-default" style="transition-delay:0.2s">
+          <div class="w-12 h-12 bg-caramel/10 rounded-2xl flex items-center justify-center mb-5 text-2xl">🎁</div>
+          <h3 class="font-serif font-bold text-espresso text-lg mb-2">BrewClub Rewards</h3>
+          <p class="text-bark text-sm leading-relaxed">10 stamps = 1 FREE brew. Your stamps stay tied to your account forever — never lose a reward.</p>
+        </div>
+        <div class="feature-card reveal-item bg-cream border border-latte rounded-3xl p-6 cursor-default" style="transition-delay:0.3s">
+          <div class="w-12 h-12 bg-caramel/10 rounded-2xl flex items-center justify-center mb-5 text-2xl">☕</div>
+          <h3 class="font-serif font-bold text-espresso text-lg mb-2">Barista Saves</h3>
+          <p class="text-bark text-sm leading-relaxed">Save your custom Brew Studio creations and share them with your barkada.</p>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="text-center reveal-item">
+        <button data-auth-open="signup" class="bg-espresso hover:bg-bark text-white px-8 py-4 rounded-2xl font-bold text-base shadow-lg shadow-espresso/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
+          Create My Free Account
+        </button>
+        <p class="text-bark/60 text-xs mt-3">No credit card required. Free forever.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       5. MENU PREVIEW
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="menu-preview" class="bg-cream py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="text-center mb-14 reveal-item">
+        <div class="inline-flex items-center gap-2 bg-white border border-latte rounded-full px-4 py-1.5 text-xs font-semibold text-bark mb-4 shadow-sm">
+          <i data-lucide="coffee" class="w-3.5 h-3.5 text-caramel"></i>
+          Our Signature Drinks
+        </div>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-espresso mb-3">24+ Drinks.</h2>
+        <p class="text-bark text-xl font-medium">One Price: <span class="text-caramel font-bold">₱39 and Up.</span></p>
+      </div>
+
+      <!-- Drinks Grid -->
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+
+        <!-- Card 1: Spanish Latte -->
+        <div class="drink-card reveal-item bg-white border border-latte rounded-3xl overflow-hidden shadow-sm">
+          <div class="h-52 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=400&q=80" alt="Spanish Latte" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+          </div>
+          <div class="p-5 flex items-center justify-between">
+            <div>
+              <div class="font-serif font-bold text-espresso text-base">Spanish Latte</div>
+              <div class="text-bark text-xs mt-0.5">Espresso · Sweet · Creamy</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-caramel text-lg">₱89</span>
+              <button data-auth-open="signin" class="bg-espresso text-white text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-bark transition-colors">Login to Order</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Java Chip Frappe -->
+        <div class="drink-card reveal-item bg-white border border-latte rounded-3xl overflow-hidden shadow-sm" style="transition-delay:0.05s">
+          <div class="h-52 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=400&q=80" alt="Java Chip Frappe" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+          </div>
+          <div class="p-5 flex items-center justify-between">
+            <div>
+              <div class="font-serif font-bold text-espresso text-base">Java Chip Frappe</div>
+              <div class="text-bark text-xs mt-0.5">Blended · Chocolate · Coffee</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-caramel text-lg">₱119</span>
+              <button data-auth-open="signin" class="bg-espresso text-white text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-bark transition-colors">Login to Order</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Brown Sugar Milk Tea -->
+        <div class="drink-card reveal-item bg-white border border-latte rounded-3xl overflow-hidden shadow-sm" style="transition-delay:0.1s">
+          <div class="h-52 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=400&q=80" alt="Brown Sugar Milk Tea" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+          </div>
+          <div class="p-5 flex items-center justify-between">
+            <div>
+              <div class="font-serif font-bold text-espresso text-base">Brown Sugar Milk Tea</div>
+              <div class="text-bark text-xs mt-0.5">Tea · Sweet · Smooth</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-caramel text-lg">₱89</span>
+              <button data-auth-open="signin" class="bg-espresso text-white text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-bark transition-colors">Login to Order</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Matcha Latte -->
+        <div class="drink-card reveal-item bg-white border border-latte rounded-3xl overflow-hidden shadow-sm" style="transition-delay:0.15s">
+          <div class="h-52 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=400&q=80" alt="Matcha Latte" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+          </div>
+          <div class="p-5 flex items-center justify-between">
+            <div>
+              <div class="font-serif font-bold text-espresso text-base">Matcha Latte</div>
+              <div class="text-bark text-xs mt-0.5">Earthy · Creamy · Antioxidant</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-caramel text-lg">₱109</span>
+              <button data-auth-open="signin" class="bg-espresso text-white text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-bark transition-colors">Login to Order</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: Cold Brew -->
+        <div class="drink-card reveal-item bg-white border border-latte rounded-3xl overflow-hidden shadow-sm" style="transition-delay:0.2s">
+          <div class="h-52 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=400&q=80" alt="Cold Brew" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+          </div>
+          <div class="p-5 flex items-center justify-between">
+            <div>
+              <div class="font-serif font-bold text-espresso text-base">Cold Brew</div>
+              <div class="text-bark text-xs mt-0.5">Smooth · Bold · 24hr Steeped</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-caramel text-lg">₱79</span>
+              <button data-auth-open="signin" class="bg-espresso text-white text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-bark transition-colors">Login to Order</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 6: Cheesecake Strawberry Tea -->
+        <div class="drink-card reveal-item bg-white border border-latte rounded-3xl overflow-hidden shadow-sm" style="transition-delay:0.25s">
+          <div class="h-52 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80" alt="Cheesecake Strawberry Tea" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+          </div>
+          <div class="p-5 flex items-center justify-between">
+            <div>
+              <div class="font-serif font-bold text-espresso text-base">Cheesecake Strawberry Tea</div>
+              <div class="text-bark text-xs mt-0.5">Fruity · Creamy · Refreshing</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-caramel text-lg">₱109</span>
+              <button data-auth-open="signin" class="bg-espresso text-white text-xs px-3 py-1.5 rounded-xl font-semibold hover:bg-bark transition-colors">Login to Order</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- View All Link -->
+      <div class="text-center reveal-item">
+        <button data-auth-open="signup" class="inline-flex items-center gap-2 text-caramel hover:text-espresso font-bold text-base border-b-2 border-caramel hover:border-espresso pb-0.5 transition-colors duration-200">
+          View All 24+ Items →
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       6. BRAND STORY
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="story" class="bg-cream py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+        <!-- Left Image -->
+        <div class="reveal-item relative">
+          <div class="absolute inset-0 bg-caramel/10 rounded-[2.5rem] blur-2xl scale-105"></div>
+          <div class="relative rounded-[2.5rem] overflow-hidden border-2 border-latte shadow-2xl shadow-espresso/10">
+            <img
+              src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=700&q=80"
+              alt="Uncle Brew Cebu IT Park"
+              class="w-full h-[480px] object-cover"
+            />
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-espresso/80 to-transparent p-6">
+              <div class="text-white font-serif font-bold text-lg">Cebu IT Park — 2019</div>
+              <div class="text-white/70 text-sm">Where it all began</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Text -->
+        <div class="reveal-item">
+          <div class="inline-flex items-center gap-2 bg-white border border-latte rounded-full px-4 py-1.5 text-xs font-semibold text-bark mb-6 shadow-sm">
+            <i data-lucide="book-open" class="w-3.5 h-3.5 text-caramel"></i>
+            Our Story
+          </div>
+          <h2 class="font-serif text-4xl sm:text-5xl font-bold text-espresso leading-tight mb-6">
+            A Cup That Started<br/>a Revolution
+          </h2>
+          <div class="space-y-4 text-bark leading-relaxed mb-8">
+            <p>
+              In 2019, nestled in the heart of <strong class="text-espresso">Cebu IT Park</strong>, Uncle Brew opened its first kiosk with one bold promise: premium specialty coffee at a price every Filipino could afford.
+            </p>
+            <p>
+              We source our beans exclusively from the <strong class="text-espresso">Benguet Highlands</strong> — single-origin Arabica grown by local farming families at high altitude, delivering that clean, bright flavor you taste in every sip.
+            </p>
+            <p>
+              Five years later, that one kiosk has grown to <strong class="text-espresso">150+ branches</strong> from Luzon to Mindanao, with a nationwide turnkey franchise program that's putting Filipino entrepreneurs in business.
+            </p>
+          </div>
+
+          <!-- Founder Quote -->
+          <blockquote class="bg-white border-l-4 border-caramel rounded-2xl p-5 shadow-sm">
+            <p class="font-serif italic text-espresso text-lg leading-relaxed mb-3">
+              "Coffee shouldn't be a luxury. Every Filipino — the student, the driver, the nurse on a night shift — deserves a genuinely good cup. That was our north star at ₱39, and it still is today."
+            </p>
+            <footer class="flex items-center gap-3">
+              <div class="w-9 h-9 bg-caramel/20 rounded-full flex items-center justify-center text-caramel font-bold text-sm">RC</div>
+              <div>
+                <div class="font-semibold text-espresso text-sm">Rico Cabanag</div>
+                <div class="text-bark text-xs">Founder & Head Barista, Uncle Brew PH</div>
+              </div>
+            </footer>
+          </blockquote>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       6B. NATIONWIDE BRANCHES INTERACTIVE 3D CAROUSEL SHOWCASE
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="branches" class="bg-white py-16 sm:py-24 border-y border-latte overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- Header + Region Filters -->
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5 sm:gap-6 mb-8 sm:mb-12 reveal-item">
+        <div>
+          <div class="inline-flex items-center gap-2 bg-cream border border-latte rounded-full px-4 py-1.5 text-xs font-semibold text-bark mb-3 sm:mb-4 shadow-sm">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-caramel"></i>
+            150+ Branches Nationwide
+          </div>
+          <h2 class="font-serif text-3xl sm:text-5xl font-bold text-espresso leading-tight">
+            Step Inside Our <span class="text-caramel italic">Café Spaces</span>
+          </h2>
+          <p class="text-bark text-xs sm:text-base mt-2 max-w-xl">
+            From our original garden roastery in Cebu IT Park to mountain-view cabins in Baguio — explore different Uncle Brew branches across the Philippines.
+          </p>
+        </div>
+
+        <!-- Region Filter Pills (Horizontally scrollable on mobile) -->
+        <div id="branch-region-filters" class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 flex-nowrap sm:flex-wrap scrollbar-none">
+          <button type="button" data-region="all" class="branch-region-btn shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-espresso text-white border border-espresso transition-all shadow-sm">
+            All Branches (6)
+          </button>
+          <button type="button" data-region="Visayas" class="branch-region-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-cream text-bark hover:text-espresso border border-latte transition-all">
+            Visayas
+          </button>
+          <button type="button" data-region="Luzon" class="branch-region-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-cream text-bark hover:text-espresso border border-latte transition-all">
+            Luzon & Metro Manila
+          </button>
+          <button type="button" data-region="Mindanao" class="branch-region-btn shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-cream text-bark hover:text-espresso border border-latte transition-all">
+            Mindanao
+          </button>
+        </div>
+      </div>
+
+      <!-- 3D Coverflow Main Stage -->
+      <div class="relative reveal-item">
+        <!-- Left / Right Floating Navigation Arrows (Positioned on image banner on mobile, centered on desktop) -->
+        <button id="branch-prev-btn" type="button" aria-label="Previous Branch"
+          class="magnetic-btn absolute left-2 sm:left-4 top-32 md:top-1/2 -translate-y-1/2 z-40 w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/95 hover:bg-espresso text-espresso hover:text-white border border-latte shadow-xl flex items-center justify-center transition-all">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </button>
+
+        <button id="branch-next-btn" type="button" aria-label="Next Branch"
+          class="magnetic-btn absolute right-2 sm:right-4 top-32 md:top-1/2 -translate-y-1/2 z-40 w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/95 hover:bg-espresso text-espresso hover:text-white border border-latte shadow-xl flex items-center justify-center transition-all">
+          <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Carousel Stage Container -->
+        <div id="branch-carousel-stage" class="branch-carousel-stage flex items-center justify-center py-2 sm:py-4 select-none">
+          <!-- Slides injected by JS -->
+        </div>
+
+        <!-- Autoplay Progress Bar & Counter Bar (Hidden visually while keeping full auto-play & swipe functionality) -->
+        <div class="hidden">
+          <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            <button id="branch-play-toggle" type="button"
+              class="px-3 py-1.5 rounded-xl bg-cream hover:bg-latte border border-latte text-espresso text-xs font-bold flex items-center gap-1.5 transition-colors">
+              <i id="branch-play-icon" data-lucide="pause" class="w-3.5 h-3.5 text-caramel"></i>
+              <span id="branch-play-label">Auto-Playing</span>
+            </button>
+            <span id="branch-slide-counter" class="text-xs font-bold text-bark font-mono">01 / 06</span>
+          </div>
+
+          <!-- Progress Bar Track -->
+          <div class="flex-1 h-2 bg-cream border border-latte rounded-full overflow-hidden">
+            <div id="branch-autoplay-bar" class="h-full bg-gradient-to-r from-espresso via-caramel to-amber-500 rounded-full transition-all duration-100" style="width: 0%"></div>
+          </div>
+
+          <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-bark font-medium">
+            <i data-lucide="move-horizontal" class="w-3.5 h-3.5 text-caramel"></i>
+            <span>Swipe or use ← → keys</span>
+          </div>
+        </div>
+
+        <!-- Interactive Branch Photo Filmstrip Thumbnails (Hidden visually while keeping logic intact) -->
+        <div id="branch-thumbs-strip" class="hidden">
+          <!-- Thumbnails injected by JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Continuous Infinite Marquee of Additional Nationwide Branches -->
+    <div class="mt-20 pt-12 border-t border-latte/70">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-bark">
+          <span class="w-2 h-2 rounded-full bg-caramel animate-ping"></span>
+          <span>Live Community Snapshots Across the Archipelago (Hover to Pause)</span>
+        </div>
+        <span class="text-xs font-semibold text-caramel hidden sm:inline">150+ Storefronts & Kiosks</span>
+      </div>
+
+      <div class="overflow-hidden relative">
+        <div class="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-white to-transparent z-10"></div>
+        <div class="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-white to-transparent z-10"></div>
+
+        <div id="branch-marquee-track" class="branch-marquee-track gap-5 px-4">
+          <!-- Populated by JS (duplicated for seamless loop) -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       7. TESTIMONIALS
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="testimonials" class="bg-cream py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-14 reveal-item">
+        <div class="inline-flex items-center gap-2 bg-foam border border-latte rounded-full px-4 py-1.5 text-xs font-semibold text-bark mb-4">
+          <i data-lucide="star" class="w-3.5 h-3.5 text-caramel fill-caramel"></i>
+          Customer Love
+        </div>
+        <h2 class="font-serif text-4xl sm:text-5xl font-bold text-espresso">What Our BrewFam Says</h2>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+
+        <!-- Testimonial 1 -->
+        <div class="reveal-item bg-cream border border-latte rounded-3xl p-6">
+          <div class="flex gap-1 mb-4">
+            <span class="text-caramel text-lg">★★★★★</span>
+          </div>
+          <p class="text-espresso leading-relaxed mb-5 font-medium">
+            "Nagsimula akong mag-Uncle Brew nung pandemic pa. Yung Spanish Latte nila is chef's kiss — creamy, hindi masyadong matamis. And ₱89 lang? Sobrang sulit talaga!"
+          </p>
+          <div class="flex items-center gap-3 pt-4 border-t border-latte">
+            <div class="w-10 h-10 bg-caramel/20 rounded-full flex items-center justify-center font-bold text-caramel text-sm">MA</div>
+            <div>
+              <div class="font-semibold text-espresso text-sm">Maria Alvarado</div>
+              <div class="text-bark text-xs">Uncle Brew SM Cebu • BrewClub Member</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testimonial 2 -->
+        <div class="reveal-item bg-cream border border-latte rounded-3xl p-6" style="transition-delay:0.1s">
+          <div class="flex gap-1 mb-4">
+            <span class="text-caramel text-lg">★★★★★</span>
+          </div>
+          <p class="text-espresso leading-relaxed mb-5 font-medium">
+            "As a nursing student, I live off caffeine. Uncle Brew's cold brew hits different — smooth, not bitter, and affordable pa! The BrewClub rewards system keeps me coming back."
+          </p>
+          <div class="flex items-center gap-3 pt-4 border-t border-latte">
+            <div class="w-10 h-10 bg-caramel/20 rounded-full flex items-center justify-center font-bold text-caramel text-sm">JD</div>
+            <div>
+              <div class="font-semibold text-espresso text-sm">Jerome Dela Cruz</div>
+              <div class="text-bark text-xs">Uncle Brew BGC Taguig • 47 Brews & counting</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testimonial 3 -->
+        <div class="reveal-item bg-cream border border-latte rounded-3xl p-6" style="transition-delay:0.2s">
+          <div class="flex gap-1 mb-4">
+            <span class="text-caramel text-lg">★★★★★</span>
+          </div>
+          <p class="text-espresso leading-relaxed mb-5 font-medium">
+            "Ang ganda ng app nila! I can customize my matcha latte down to the sweetness level and milk type. Naka-save ko na yung perfect combo ko — ibibigay ko na lang sa barista!"
+          </p>
+          <div class="flex items-center gap-3 pt-4 border-t border-latte">
+            <div class="w-10 h-10 bg-caramel/20 rounded-full flex items-center justify-center font-bold text-caramel text-sm">AS</div>
+            <div>
+              <div class="font-semibold text-espresso text-sm">Angela Santos</div>
+              <div class="text-bark text-xs">Uncle Brew Davao • Franchise Advocate</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       8. FRANCHISE TEASER
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="franchise" class="bg-espresso py-24">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="reveal-item">
+        <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs font-semibold text-white/70 mb-6">
+          <i data-lucide="trending-up" class="w-3.5 h-3.5 text-caramel"></i>
+          Business Opportunity
+        </div>
+        <h2 class="font-serif text-4xl sm:text-5xl font-black text-white mb-4">
+          Own a Piece of the<br/>
+          <span class="text-caramel">₱39 Revolution</span>
+        </h2>
+        <p class="text-white/60 text-lg max-w-xl mx-auto mb-10">
+          Join 150+ franchisee partners building real income with a proven, turnkey coffee business model that Filipinos already love.
+        </p>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-6 max-w-2xl mx-auto mb-10">
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 sm:p-5">
+            <div class="font-serif font-black text-caramel text-xl sm:text-3xl mb-1">₱500K</div>
+            <div class="text-white/60 text-[11px] sm:text-sm">Entry Investment</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 sm:p-5">
+            <div class="font-serif font-black text-caramel text-xl sm:text-3xl mb-1">18mo</div>
+            <div class="text-white/60 text-[11px] sm:text-sm">Avg ROI Period</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 sm:p-5">
+            <div class="font-serif font-black text-caramel text-xl sm:text-3xl mb-1">85%</div>
+            <div class="text-white/60 text-[11px] sm:text-sm">Renewal Rate</div>
+          </div>
+        </div>
+
+        <a href="index.html#franchise" class="inline-flex items-center gap-2 bg-caramel hover:bg-amber-600 text-white px-8 py-4 rounded-2xl font-bold text-base shadow-lg shadow-caramel/30 transition-all duration-200 hover:scale-[1.02]">
+          <i data-lucide="store" class="w-5 h-5"></i>
+          Learn About Franchising
+        </a>
+        <p class="text-white/40 text-xs mt-4">Sign in required to view full franchise ROI calculator</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       9. FOOTER
+  ═══════════════════════════════════════════════════════════ -->
+  <footer class="bg-espresso border-t border-white/5 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-10 pb-10 border-b border-white/10">
+
+        <!-- Brand -->
+        <div class="md:col-span-1">
+          <div class="flex items-center gap-2.5 mb-4">
+            <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center">
+              <i data-lucide="coffee" class="text-caramel w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="font-serif font-bold text-white text-base">UNCLE BREW PH</div>
+              <div class="text-white/40 text-[10px]">Specialty Coffee & Refreshers</div>
+            </div>
+          </div>
+          <p class="text-white/50 text-sm leading-relaxed">
+            Born in Cebu. Brewed for every Filipino. Quality coffee you can afford every single day.
+          </p>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h4 class="font-semibold text-white text-sm mb-4">Quick Links</h4>
+          <ul class="space-y-2.5 text-white/50 text-sm">
+            <li><a href="#menu-preview" class="hover:text-white transition-colors">Our Menu</a></li>
+            <li><a href="#story" class="hover:text-white transition-colors">Our Story</a></li>
+            <li><button data-auth-open="signup" class="hover:text-white transition-colors">Join BrewClub</button></li>
+            <li><a href="#branches" class="hover:text-white transition-colors">Find a Branch</a></li>
+            <li><a href="#franchise" class="hover:text-white transition-colors">Franchise Info</a></li>
+          </ul>
+        </div>
+
+        <!-- Connect -->
+        <div>
+          <h4 class="font-semibold text-white text-sm mb-4">Connect</h4>
+          <ul class="space-y-2.5 text-white/50 text-sm">
+            <li><a href="#" class="hover:text-white transition-colors flex items-center gap-2"><i data-lucide="instagram" class="w-3.5 h-3.5"></i>@unclebrewph</a></li>
+            <li><a href="#" class="hover:text-white transition-colors flex items-center gap-2"><i data-lucide="facebook" class="w-3.5 h-3.5"></i>Uncle Brew PH</a></li>
+            <li><a href="#" class="hover:text-white transition-colors flex items-center gap-2"><i data-lucide="youtube" class="w-3.5 h-3.5"></i>Uncle Brew PH</a></li>
+            <li><a href="mailto:hello@unclebrew.ph" class="hover:text-white transition-colors flex items-center gap-2"><i data-lucide="mail" class="w-3.5 h-3.5"></i>hello@unclebrew.ph</a></li>
+          </ul>
+        </div>
+
+        <!-- Legal -->
+        <div>
+          <h4 class="font-semibold text-white text-sm mb-4">Legal</h4>
+          <ul class="space-y-2.5 text-white/50 text-sm">
+            <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Cookie Policy</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Refund Policy</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Bottom Copyright -->
+      <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p class="text-white/30 text-sm">© 2026 Uncle Brew PH. All rights reserved.</p>
+        <div class="flex items-center gap-1 text-white/30 text-xs">
+          <i data-lucide="coffee" class="w-3 h-3 text-caramel/50"></i>
+          <span>Brewed with love in Cebu, Philippines 🇵🇭</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       AUTH MODAL
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div id="auth-modal-backdrop" class="absolute inset-0 bg-espresso/60 backdrop-blur-sm"></div>
+
+    <!-- Card -->
+    <div class="auth-modal-card relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-espresso/30 overflow-hidden max-h-[95vh] flex flex-col">
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-latte shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 bg-espresso rounded-xl flex items-center justify-center">
+            <i data-lucide="coffee" class="text-caramel w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="font-serif font-bold text-espresso text-sm leading-none">Uncle Brew PH</div>
+            <div class="text-bark text-[10px] leading-none mt-0.5">Your café account</div>
+          </div>
+        </div>
+        <button id="btn-auth-close" class="w-8 h-8 bg-cream hover:bg-latte rounded-full flex items-center justify-center transition-colors">
+          <i data-lucide="x" class="w-4 h-4 text-bark"></i>
+        </button>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="flex gap-1 px-6 py-3 bg-cream shrink-0">
+        <button data-auth-tab="signin" class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all duration-200 text-bark hover:text-espresso hover:bg-white border border-transparent tab-active">
+          Sign In
+        </button>
+        <button data-auth-tab="signup" class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all duration-200 text-bark hover:text-espresso hover:bg-white border border-transparent">
+          Create Account
+        </button>
+        <button data-auth-tab="reset" class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all duration-200 text-bark hover:text-espresso hover:bg-white border border-transparent">
+          Reset Password
+        </button>
+      </div>
+
+      <!-- Modal Body (scrollable) -->
+      <div class="overflow-y-auto flex-1 px-6 pb-6">
+
+        <!-- ── SIGN IN PANEL ── -->
+        <div id="auth-panel-signin">
+          <h3 class="font-serif font-bold text-espresso text-xl mt-4 mb-1">Welcome back!</h3>
+          <p class="text-bark text-sm mb-5">Sign in to your Uncle Brew account</p>
+
+          <form id="form-signin" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-espresso mb-1.5">Email Address</label>
+              <input id="signin-email" type="email" placeholder="you@example.com" autocomplete="email"
+                class="w-full border border-latte rounded-xl px-4 py-3 text-sm text-espresso placeholder-bark/40 focus:outline-none focus:border-caramel focus:ring-2 focus:ring-caramel/20 transition-all" />
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-semibold text-espresso">Password</label>
+                <button type="button" class="text-xs text-caramel hover:underline" onclick="window.authSystem?.switchTab('reset')">Forgot Password?</button>
+              </div>
+              <input id="signin-password" type="password" placeholder="••••••••" autocomplete="current-password"
+                class="w-full border border-latte rounded-xl px-4 py-3 text-sm text-espresso placeholder-bark/40 focus:outline-none focus:border-caramel focus:ring-2 focus:ring-caramel/20 transition-all" />
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="signin-remember" type="checkbox" class="rounded border-latte accent-caramel w-4 h-4" />
+              <label for="signin-remember" class="text-xs text-bark">Remember me</label>
+            </div>
+            <!-- Message area -->
+            <div id="msg-signin" class="hidden mt-3 px-4 py-3 rounded-xl text-xs font-semibold"></div>
+            <button type="submit" class="w-full bg-espresso hover:bg-bark text-white py-3.5 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.01]" data-original-text="Sign In">
+              Sign In
+            </button>
+          </form>
+
+          <!-- Divider -->
+          <div class="flex items-center gap-3 my-5">
+            <div class="flex-1 h-px bg-latte"></div>
+            <span class="text-bark/50 text-xs font-medium">or continue with</span>
+            <div class="flex-1 h-px bg-latte"></div>
+          </div>
+
+          <!-- Google Button -->
+          <button data-google-auth class="w-full flex items-center justify-center gap-3 border-2 border-latte hover:border-gray-300 py-3 rounded-xl text-sm font-semibold text-espresso transition-all duration-200 hover:bg-gray-50">
+            <svg class="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Continue with Google
+          </button>
+
+          <!-- Instant Brewer Pass Button -->
+          <button type="button" data-quick-guest class="mt-2.5 w-full flex items-center justify-center gap-2 border-2 border-caramel/40 bg-cream hover:bg-latte py-3 rounded-xl text-xs font-bold text-espresso transition-all duration-200">
+            <i data-lucide="zap" class="w-4 h-4 text-caramel"></i>
+            Instant Brewer Pass (1-Click Quick Login)
+          </button>
+
+          <p class="text-center text-xs text-bark mt-5">
+            Don't have an account?
+            <button type="button" class="text-caramel font-semibold hover:underline ml-1" onclick="window.authSystem?.switchTab('signup')">Create one free →</button>
+          </p>
+        </div>
+
+        <!-- ── SIGN UP PANEL ── -->
+        <div id="auth-panel-signup" class="hidden">
+          <h3 class="font-serif font-bold text-espresso text-xl mt-4 mb-1">Join Uncle Brew!</h3>
+          <p class="text-bark text-sm mb-5">Free forever • No credit card needed</p>
+
+          <form id="form-signup" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-espresso mb-1.5">Full Name</label>
+              <input id="signup-name" type="text" placeholder="Juan dela Cruz" autocomplete="name"
+                class="w-full border border-latte rounded-xl px-4 py-3 text-sm text-espresso placeholder-bark/40 focus:outline-none focus:border-caramel focus:ring-2 focus:ring-caramel/20 transition-all" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-espresso mb-1.5">Email Address</label>
+              <input id="signup-email" type="email" placeholder="you@example.com" autocomplete="email"
+                class="w-full border border-latte rounded-xl px-4 py-3 text-sm text-espresso placeholder-bark/40 focus:outline-none focus:border-caramel focus:ring-2 focus:ring-caramel/20 transition-all" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-espresso mb-1.5">Password</label>
+              <div class="password-wrapper">
+                <input id="signup-password" type="password" placeholder="Min. 8 characters" autocomplete="new-password"
+                  class="w-full border border-latte rounded-xl px-4 py-3 text-sm text-espresso placeholder-bark/40 focus:outline-none focus:border-caramel focus:ring-2 focus:ring-caramel/20 transition-all" />
+                <button type="button" class="toggle-pw" onclick="togglePw('signup-password', this)">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-espresso mb-1.5">Confirm Password</label>
+              <input id="signup-confirm" type="password" placeholder="Repeat password" autocomplete="new-password"
+                class="w-full border border-latte rounded-xl px-4 py-3 text-sm text-espresso placeholder-bark/40 focus:outline-none focus:border-caramel focus:ring-2 focus:ring-caramel/20 transition-all" />
+            </div>
+            <div class="flex items-start gap-2">
+              <input id="signup-agree" type="checkbox" class="rounded border-latte accent-caramel w-4 h-4 mt-0.5" />
+              <label for="signup-agree" class="text-xs text-bark leading-relaxed">
+                I agree to Uncle Brew's <a href="#" class="text-caramel hover:underline">Terms of Service</a> and <a href="#" class="text-caramel hover:underline">Privacy Policy</a>
+              </label>
+            </div>
+            <!-- Message area -->
+            <div id="msg-signup" class="hidden px-4 py-3 rounded-xl text-xs font-semibold"></div>
+            <button type="submit" class="w-full bg-espresso hover:bg-bark text-white py-3.5 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.01]" data-original-text="Create My Free Account">
+              Create My Free Account
+            </button>
+          </form>
+
+          <!-- Divider -->
+          <div class="flex items-center gap-3 my-5">
+            <div class="flex-1 h-px bg-latte"></div>
+            <span class="text-bark/50 text-xs font-medium">or continue with</span>
+            <div class="flex-1 h-px bg-latte"></div>
+          </div>
+
+          <!-- Google Button -->
+          <button data-google-auth class="w-full flex items-center justify-center gap-3 border-2 border-latte hover:border-gray-300 py-3 rounded-xl text-sm font-semibold text-espresso transition-all duration-200 hover:bg-gray-50">
+            <svg class="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Continue with Google
+          </button>
+
+          <!-- Instant Brewer Pass Button -->
+          <button type="button" data-quick-guest class="mt-2.5 w-full flex items-center justify-center gap-2 border-2 border-caramel/40 bg-cream hover:bg-latte py-3 rounded-xl text-xs font-bold text-espresso transition-all duration-200">
+            <i data-lucide="zap" class="w-4 h-4 text-caramel"></i>
+            Instant Brewer Pass (1-Click Quick Login)
+          </button>
+
+          <p class="text-center text-xs text-bark mt-5">
+            Already have an account?
+            <button type="button" class="text-caramel font-semibold hover:underline ml-1" onclick="window.authSystem?.switchTab('signin')">Sign In →</button>
+          </p>
+        </div>
+
+        <!-- ── RESET PASSWORD PANEL ── -->
+        <div id="auth-panel-reset" class="hidden">
+          <div class="text-center mt-4 mb-5">
+            <div class="w-14 h-14 bg-caramel/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <i data-lucide="key-round" class="w-7 h-7 text-caramel"></i>
+            </div>
+            <h3 class="font-serif font-bold text-espresso text-xl mb-1">Forgot your password?</h3>
+            <p class="text-bark text-sm">Enter your email and we'll send a reset link</p>
+          </div>
+
+          <form id="form-reset" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-espresso mb-1.5">Email Address</label>
+              <input id="reset-email" type="email" placeholder="you@example.com" autocomplete="email"
+                class="w-full border border-latte rounded-xl px-4 py-3 text-sm text-espresso placeholder-bark/40 focus:outline-none focus:border-caramel focus:ring-2 focus:ring-caramel/20 transition-all" />
+            </div>
+            <!-- Message area -->
+            <div id="msg-reset" class="hidden px-4 py-3 rounded-xl text-xs font-semibold"></div>
+            <button type="submit" class="w-full bg-caramel hover:bg-amber-600 text-white py-3.5 rounded-xl font-bold text-sm transition-all duration-200" data-original-text="Send Reset Link">
+              Send Reset Link
+            </button>
+          </form>
+
+          <p class="text-center text-xs text-bark mt-5">
+            Remembered it?
+            <button type="button" class="text-caramel font-semibold hover:underline ml-1" onclick="window.authSystem?.switchTab('signin')">← Back to Sign In</button>
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCRIPTS
+  ═══════════════════════════════════════════════════════════ -->
+
+  <!-- Scroll Reveal -->
+  <script>
+    (function () {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+      document.querySelectorAll('.reveal-item').forEach(el => observer.observe(el));
+    })();
+  </script>
+
+  <!-- Password Toggle Helper -->
+  <script>
+    function togglePw(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      btn.innerHTML = isPassword
+        ? '<i data-lucide="eye-off" class="w-4 h-4"></i>'
+        : '<i data-lucide="eye" class="w-4 h-4"></i>';
+      if (window.lucide) window.lucide.createIcons();
+    }
+  </script>
+
+  <!-- Auth System -->
+  <script>
+    const SUPABASE_URL = "https://ffrzekxmkaslpgudqemj.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_0cjPv3TRGj6S1RspcrAw8Q_lEWzwYKE";
+
+    class AuthSystem {
+      constructor() {
+        this.client = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+        this.activeTab = 'signin';
+        this.init();
+      }
+
+      static generateBrewerId(seedStr = "") {
+        let hash = 0;
+        const str = String(seedStr || Date.now());
+        for (let i = 0; i < str.length; i++) {
+          hash = ((hash << 5) - hash) + str.charCodeAt(i);
+          hash |= 0;
+        }
+        const num = (Math.abs(hash) % 900000) + 100000;
+        return `UB-${num}`;
+      }
+
+      async init() {
+        const params = new URLSearchParams(window.location.search);
+        const isPreview = params.get('preview') === '1';
+
+        if (!isPreview) {
+          if (this.client) {
+            try {
+              const { data: { session } } = await this.client.auth.getSession();
+              if (session?.user) {
+                this.saveLocalSession(session.user.id, session.user.email, session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
+                window.location.href = 'index.html';
+                return;
+              }
+            } catch (e) {}
+          }
+          const existingLocal = localStorage.getItem('unclebrew_user_session');
+          if (existingLocal) {
+            window.location.href = 'index.html';
+            return;
+          }
+        }
+
+        this.bindEvents();
+        this.renderActiveTab();
+        if (params.get('auth') === 'signup') this.openModal('signup');
+      }
+
+      saveLocalSession(id, email, fullName) {
+        const brewerId = AuthSystem.generateBrewerId(id || email || fullName);
+        const userObj = {
+          id: id || ('user-' + brewerId.toLowerCase()),
+          email: email,
+          brewer_id: brewerId,
+          user_metadata: {
+            full_name: fullName,
+            display_name: fullName,
+            brewer_id: brewerId
+          }
+        };
+        localStorage.setItem('unclebrew_user_session', JSON.stringify(userObj));
+        return userObj;
+      }
+
+      renderActiveTab() {
+        this.switchTab(this.activeTab);
+      }
+
+      bindEvents() {
+        document.querySelectorAll('[data-auth-open]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const tab = btn.dataset.authOpen || 'signin';
+            this.openModal(tab);
+          });
+        });
+        document.getElementById('auth-modal-backdrop')?.addEventListener('click', () => this.closeModal());
+        document.getElementById('btn-auth-close')?.addEventListener('click', () => this.closeModal());
+        document.querySelectorAll('[data-auth-tab]').forEach(btn => {
+          btn.addEventListener('click', () => this.switchTab(btn.dataset.authTab));
+        });
+        document.getElementById('form-signin')?.addEventListener('submit', e => { e.preventDefault(); this.handleSignIn(); });
+        document.getElementById('form-signup')?.addEventListener('submit', e => { e.preventDefault(); this.handleSignUp(); });
+        document.getElementById('form-reset')?.addEventListener('submit', e => { e.preventDefault(); this.handleReset(); });
+        document.querySelectorAll('[data-google-auth]').forEach(btn => {
+          btn.addEventListener('click', () => this.signInWithGoogle());
+        });
+        document.querySelectorAll('[data-quick-guest]').forEach(btn => {
+          btn.addEventListener('click', () => this.handleQuickGuest());
+        });
+        document.addEventListener('keydown', e => {
+          if (e.key === 'Escape') this.closeModal();
+        });
+      }
+
+      openModal(tab = 'signin') {
+        this.switchTab(tab);
+        const modal = document.getElementById('auth-modal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              modal.querySelector('.auth-modal-card')?.classList.add('modal-visible');
+            });
+          });
+        }
+      }
+
+      closeModal() {
+        const modal = document.getElementById('auth-modal');
+        const card = modal?.querySelector('.auth-modal-card');
+        if (card) {
+          card.classList.remove('modal-visible');
+          setTimeout(() => modal.classList.add('hidden'), 280);
+        }
+      }
+
+      switchTab(tab) {
+        this.activeTab = tab;
+        ['signin', 'signup', 'reset'].forEach(t => {
+          document.getElementById(`auth-panel-${t}`)?.classList.add('hidden');
+          const tabBtn = document.querySelector(`[data-auth-tab="${t}"]`);
+          if (tabBtn) {
+            tabBtn.classList.remove('tab-active');
+            tabBtn.style.background = '';
+            tabBtn.style.color = '';
+          }
+        });
+        document.getElementById(`auth-panel-${tab}`)?.classList.remove('hidden');
+        const activeBtn = document.querySelector(`[data-auth-tab="${tab}"]`);
+        if (activeBtn) activeBtn.classList.add('tab-active');
+        this.clearMessages();
+      }
+
+      setLoading(formId, loading) {
+        const btn = document.querySelector(`#${formId} button[type="submit"], #${formId} .btn-submit`);
+        if (!btn) return;
+        if (loading) {
+          if (!btn.dataset.originalText) btn.dataset.originalText = btn.textContent.trim();
+          btn.disabled = true;
+          btn.innerHTML = `<span class="inline-flex items-center gap-2"><span class="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>Please wait...</span>`;
+        } else {
+          btn.disabled = false;
+          btn.textContent = btn.dataset.originalText || 'Submit';
+        }
+      }
+
+      showMessage(panelId, message, type = 'error') {
+        const msgEl = document.getElementById(`msg-${panelId}`);
+        if (!msgEl) return;
+        const isError = type === 'error';
+        msgEl.className = `mt-3 px-4 py-3 rounded-xl text-xs font-semibold ${isError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`;
+        msgEl.textContent = message;
+        msgEl.classList.remove('hidden');
+      }
+
+      clearMessages() {
+        document.querySelectorAll('[id^="msg-"]').forEach(el => el.classList.add('hidden'));
+      }
+
+      async handleSignIn() {
+        const email = document.getElementById('signin-email')?.value?.trim().toLowerCase();
+        const password = document.getElementById('signin-password')?.value;
+        if (!email || !password) { this.showMessage('signin', 'Please enter your email and password.'); return; }
+        this.setLoading('form-signin', true);
+
+        try {
+          if (this.client) {
+            const { data, error } = await this.client.auth.signInWithPassword({ email, password });
+            if (!error && data?.user) {
+              const name = data.user.user_metadata?.full_name || email.split('@')[0];
+              const profile = this.saveLocalSession(data.user.id, email, name);
+              this.showMessage('signin', `☕ Welcome back, ${name}! ID: ${profile.brewer_id}`, 'success');
+              setTimeout(() => window.location.href = 'index.html', 750);
+              return;
+            }
+          }
+
+          // Check local registered users registry (for instant sign-in even before email confirmation)
+          const registry = JSON.parse(localStorage.getItem('unclebrew_registered_users') || '{}');
+          if (registry[email] && registry[email].password === password) {
+            const u = registry[email];
+            const profile = this.saveLocalSession(u.id, email, u.full_name);
+            this.showMessage('signin', `☕ Welcome back, ${u.full_name}! ID: ${profile.brewer_id}`, 'success');
+            setTimeout(() => window.location.href = 'index.html', 750);
+            return;
+          }
+
+          this.showMessage('signin', 'Invalid email or password. Try creating an account or use Instant Brewer Pass.');
+        } finally {
+          this.setLoading('form-signin', false);
+        }
+      }
+
+      async handleSignUp() {
+        const name = document.getElementById('signup-name')?.value?.trim();
+        const email = document.getElementById('signup-email')?.value?.trim().toLowerCase();
+        const password = document.getElementById('signup-password')?.value;
+        const confirm = document.getElementById('signup-confirm')?.value;
+        const agreed = document.getElementById('signup-agree')?.checked;
+
+        if (!name || !email || !password) { this.showMessage('signup', 'Please fill in all required fields.'); return; }
+        if (password !== confirm) { this.showMessage('signup', 'Passwords do not match.'); return; }
+        if (password.length < 8) { this.showMessage('signup', 'Password must be at least 8 characters.'); return; }
+        if (!agreed) { this.showMessage('signup', 'Please agree to the Terms & Privacy Policy.'); return; }
+
+        this.setLoading('form-signup', true);
+        const brewerId = AuthSystem.generateBrewerId(email);
+        let userId = 'user-' + brewerId.toLowerCase();
+
+        try {
+          if (this.client) {
+            const { data, error } = await this.client.auth.signUp({
+              email,
+              password,
+              options: { data: { full_name: name, display_name: name, brewer_id: brewerId } }
+            });
+            if (data?.user?.id) userId = data.user.id;
+          }
+        } catch (e) {}
+
+        // Save in local user registry & active session so user gets immediate access
+        const registry = JSON.parse(localStorage.getItem('unclebrew_registered_users') || '{}');
+        registry[email] = { id: userId, email, full_name: name, password, brewer_id: brewerId };
+        localStorage.setItem('unclebrew_registered_users', JSON.stringify(registry));
+
+        const profile = this.saveLocalSession(userId, email, name);
+        this.setLoading('form-signup', false);
+        this.showMessage('signup', `🎉 Account created! Your unique Brewer ID is ${profile.brewer_id}. Entering café...`, 'success');
+        setTimeout(() => window.location.href = 'index.html', 950);
+      }
+
+      handleQuickGuest() {
+        const randomNum = Math.floor(1000 + Math.random() * 9000);
+        const email = `brewer${randomNum}@unclebrew.ph`;
+        const name = `Brewer #${randomNum}`;
+        const brewerId = AuthSystem.generateBrewerId(email);
+        const profile = this.saveLocalSession(`user-${brewerId.toLowerCase()}`, email, name);
+        this.showMessage(this.activeTab, `⚡ Instant Brewer Pass activated! ID: ${profile.brewer_id}. Redirecting...`, 'success');
+        setTimeout(() => window.location.href = 'index.html', 650);
+      }
+
+      async handleReset() {
+        const email = document.getElementById('reset-email')?.value?.trim();
+        if (!email) { this.showMessage('reset', 'Please enter your email address.'); return; }
+        this.setLoading('form-reset', true);
+        if (this.client) {
+          const { error } = await this.client.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/index.html'
+          });
+          this.setLoading('form-reset', false);
+          if (error) { this.showMessage('reset', error.message); return; }
+        }
+        this.setLoading('form-reset', false);
+        this.showMessage('reset', '✓ Password reset link sent! Check your inbox.', 'success');
+      }
+
+      async signInWithGoogle() {
+        if (!this.client) return;
+        await this.client.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.origin + '/index.html' }
+        });
+      }
+    }
+
+    class BranchCarouselEngine {
+      constructor() {
+        this.allBranches = [
+          {
+            id: 'UB-CEB-001',
+            name: 'Cebu IT Park Flagship',
+            city: 'Cebu City',
+            region: 'Visayas',
+            address: 'Garden Row, Ayala Central Bloc, Cebu IT Park',
+            hours: 'Open 24 Hours Daily',
+            status: 'Flagship Roastery • Open 24/7',
+            signatureDrink: 'Cebu Spanish Latte (₱89)',
+            rating: '4.9 ★ (2.4k reviews)',
+            description: 'Where the ₱39 specialty coffee revolution began in 2019. Features a lush tropical garden patio, on-site small-batch drum roaster, and high-speed fiber for night-shift creatives.',
+            amenities: ['Garden Deck', '24/7 Espresso Bar', '100Mbps Fiber Wi-Fi', 'Power Outlets'],
+            image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1100&q=80',
+            thumb: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=360&q=80'
+          },
+          {
+            id: 'UB-MNL-014',
+            name: 'BGC High Street Lounge',
+            city: 'Taguig, Metro Manila',
+            region: 'Luzon',
+            address: '7th Ave cor. Bonifacio High Street, BGC, Taguig',
+            hours: '6:00 AM – 12:00 MN',
+            status: 'Specialty Espresso Bar • Open Now',
+            signatureDrink: 'Dirty Matcha Cloud (₱109)',
+            rating: '4.9 ★ (1.8k reviews)',
+            description: 'Sun-drenched floor-to-ceiling glass café in the heart of Bonifacio Global City. Designed with warm oak communal tables, acoustic booths, and a dedicated Brew Studio bar.',
+            amenities: ['Co-Working Lounge', 'Pet-Friendly Patio', 'Pour-Over Bar', 'Express Pickup'],
+            image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1100&q=80',
+            thumb: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=360&q=80'
+          },
+          {
+            id: 'UB-MKT-028',
+            name: 'Poblacion Makati Taproom',
+            city: 'Makati, Metro Manila',
+            region: 'Luzon',
+            address: 'Don Pedro St., Poblacion, Makati City',
+            hours: '7:00 AM – 2:00 AM',
+            status: 'Cold Brew Taproom • Late Night',
+            signatureDrink: '24hr Nitro Cold Brew (₱79)',
+            rating: '4.8 ★ (1.5k reviews)',
+            description: 'Industrial brick-and-warm-wood sanctuary serving nitro cold brew on tap, freshly pressed Belgian waffles, and vinyl acoustic sets every Friday & Saturday evening.',
+            amenities: ['Nitro Tap Bar', 'Vinyl Listening Corner', 'Late-Night Bites', 'Roof Deck'],
+            image: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&w=1100&q=80',
+            thumb: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&w=360&q=80'
+          },
+          {
+            id: 'UB-ILO-042',
+            name: 'Iloilo Festive Walk Veranda',
+            city: 'Iloilo City',
+            region: 'Visayas',
+            address: 'Festive Walk Parade, Mandurriao, Iloilo City',
+            hours: '7:00 AM – 11:00 PM',
+            status: 'Artisan Bakery & Café • Open Now',
+            signatureDrink: 'Salted Caramel Cream Oat (₱99)',
+            rating: '4.9 ★ (1.1k reviews)',
+            description: 'Breezy Spanish-inspired veranda café with rattan lounge seating, warm terracotta accents, and an all-day pastry kitchen baking golden croffles every hour.',
+            amenities: ['Al-Fresco Veranda', 'Fresh Croffle Kitchen', 'Family Seating', 'Bike Racks'],
+            image: 'https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=1100&q=80',
+            thumb: 'https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=360&q=80'
+          },
+          {
+            id: 'UB-DVO-067',
+            name: 'Davao Poblacion Highland Hub',
+            city: 'Davao City',
+            region: 'Mindanao',
+            address: 'F. Torres St., Poblacion District, Davao City',
+            hours: '6:30 AM – 11:30 PM',
+            status: 'Mindanao Flagship • Open Now',
+            signatureDrink: 'Mt. Apo Single-Origin Pour (₱89)',
+            rating: '5.0 ★ (980 reviews)',
+            description: 'Celebrates Mindanao coffee heritage with direct-trade Mt. Apo and Bukidnon beans alongside our Benguet house blend, set in a botanical indoor-outdoor courtyard.',
+            amenities: ['Bean Tasting Bar', 'Drive-Thru Lane', 'Study Pods', 'Solar Powered'],
+            image: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=1100&q=80',
+            thumb: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=360&q=80'
+          },
+          {
+            id: 'UB-BAG-095',
+            name: 'Baguio Session Mountain Cabin',
+            city: 'Baguio City',
+            region: 'Luzon',
+            address: 'Upper Session Road, Baguio City, Benguet',
+            hours: '6:00 AM – 10:00 PM',
+            status: 'Highland Origin Café • Cool 16°C',
+            signatureDrink: 'Hot Benguet Tablea Mocha (₱89)',
+            rating: '4.9 ★ (1.6k reviews)',
+            description: 'Perched in the pine-scented mist just miles from our partner coffee farms in Atok, Benguet. Warm up by the hearth with steaming handcrafted lattes and cinnamon brioche.',
+            amenities: ['Mountain View Deck', 'Farm-to-Cup Roastery', 'Fireplace Lounge', 'Bean Retail Shop'],
+            image: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=1100&q=80',
+            thumb: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=360&q=80'
+          }
+        ];
+
+        this.marqueeSnapshots = [
+          { branch: 'SM Seaside Cebu', tag: 'Sky Garden Kiosk', img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=500&q=80' },
+          { branch: 'UP Town Center QC', tag: 'Student Study Hub', img: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=500&q=80' },
+          { branch: 'Siargao General Luna', tag: 'Island Surf Espresso Bar', img: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=500&q=80' },
+          { branch: 'Clark Global City', tag: 'Drive-Thru & Lounge', img: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=500&q=80' },
+          { branch: 'Bacolod Lacson St.', tag: 'Heritage Café & Bakery', img: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=500&q=80' },
+          { branch: 'Cagayan de Oro Centrio', tag: 'Mindanao Express Bar', img: 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=500&q=80' }
+        ];
+
+        this.filteredBranches = [...this.allBranches];
+        this.activeIndex = 0;
+        this.isPlaying = true;
+        this.progress = 0;
+        this.slideDuration = 5000; // 5 seconds per slide
+        this.lastTick = performance.now();
+
+        this.stageEl = document.getElementById('branch-carousel-stage');
+        this.thumbsEl = document.getElementById('branch-thumbs-strip');
+        this.counterEl = document.getElementById('branch-slide-counter');
+        this.barEl = document.getElementById('branch-autoplay-bar');
+        this.marqueeEl = document.getElementById('branch-marquee-track');
+
+        if (this.stageEl) this.init();
+      }
+
+      init() {
+        this.renderSlides();
+        this.renderThumbs();
+        this.renderMarquee();
+        this.updatePositions();
+        this.bindEvents();
+        this.startAutoplayLoop();
+      }
+
+      renderSlides() {
+        this.stageEl.innerHTML = this.filteredBranches.map((b, idx) => `
+          <article data-slide-idx="${idx}"
+            class="branch-slide-card absolute w-full max-w-4xl bg-cream border-2 border-latte rounded-[2rem] shadow-2xl shadow-espresso/15 overflow-hidden grid grid-cols-1 md:grid-cols-12">
+            <!-- Branch Photo Column -->
+            <div class="md:col-span-6 relative h-64 sm:h-80 md:h-[440px] overflow-hidden bg-espresso">
+              <img src="${b.image}" alt="${b.name}" class="branch-hero-img w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-gradient-to-t from-espresso/85 via-espresso/20 to-transparent"></div>
+
+              <!-- Top Badges -->
+              <div class="absolute top-4 left-4 right-4 flex items-center justify-between gap-2">
+                <span class="px-3 py-1 rounded-full bg-espresso/90 backdrop-blur-md text-white text-[11px] font-bold tracking-wider uppercase border border-white/15">
+                  ${b.region} • ${b.id}
+                </span>
+                <span class="px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-espresso text-xs font-bold shadow">
+                  ${b.rating}
+                </span>
+              </div>
+
+              <!-- Bottom Overlay Info -->
+              <div class="absolute bottom-4 left-4 right-4 text-white">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-caramel text-white text-[11px] font-bold mb-2 shadow">
+                  <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                  <span>${b.status}</span>
+                </div>
+                <div class="font-serif text-2xl font-bold leading-tight">${b.city}</div>
+                <div class="text-white/80 text-xs flex items-center gap-1 mt-0.5">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-caramel"></i>
+                  <span>${b.hours}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Branch Details Column -->
+            <div class="md:col-span-6 p-6 sm:p-8 flex flex-col justify-between bg-white">
+              <div>
+                <div class="text-xs font-extrabold uppercase tracking-widest text-caramel mb-1">Featured Branch Spotlight</div>
+                <h3 class="font-serif text-2xl sm:text-3xl font-black text-espresso leading-snug">${b.name}</h3>
+
+                <p class="text-xs text-bark font-medium flex items-start gap-1.5 mt-2 pb-4 border-b border-latte">
+                  <i data-lucide="map-pin" class="w-4 h-4 text-caramel shrink-0 mt-0.5"></i>
+                  <span>${b.address}</span>
+                </p>
+
+                <p class="text-bark text-xs sm:text-sm leading-relaxed mt-4">
+                  ${b.description}
+                </p>
+
+                <!-- Branch Amenities -->
+                <div class="mt-5">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-bark/70 mb-2">Branch Amenities & Vibe</div>
+                  <div class="flex flex-wrap gap-1.5">
+                    ${b.amenities.map(a => `
+                      <span class="px-2.5 py-1 rounded-lg bg-cream border border-latte text-espresso text-[11px] font-semibold">${a}</span>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom Signature Drink + Order CTA -->
+              <div class="mt-6 pt-4 border-t border-latte flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span class="text-[10px] uppercase tracking-wider font-bold text-bark block">Branch Favorite</span>
+                  <span class="text-sm font-black text-espresso">☕ ${b.signatureDrink}</span>
+                </div>
+                <button type="button" onclick="window.authSystem?.openModal('signin')"
+                  class="px-4 py-2.5 rounded-xl bg-espresso hover:bg-bark text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md transition-all">
+                  <span>Order From Branch</span>
+                  <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-caramel"></i>
+                </button>
+              </div>
+            </div>
+          </article>
+        `).join('');
+
+        // Allow clicking prev/next peek cards to navigate directly
+        this.stageEl.querySelectorAll('.branch-slide-card').forEach(card => {
+          card.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            const idx = parseInt(card.dataset.slideIdx || '0', 10);
+            if (idx !== this.activeIndex) {
+              this.goToSlide(idx);
+            }
+          });
+        });
+
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      renderThumbs() {
+        if (!this.thumbsEl) return;
+        this.thumbsEl.innerHTML = this.filteredBranches.map((b, idx) => `
+          <button type="button" data-thumb-idx="${idx}"
+            class="branch-thumb-btn w-40 sm:w-44 lg:w-auto shrink-0 snap-start group relative rounded-2xl overflow-hidden border-2 border-latte bg-white text-left shadow-sm focus:outline-none">
+            <div class="h-20 sm:h-24 overflow-hidden relative">
+              <img src="${b.thumb}" alt="${b.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-espresso/80 via-espresso/20 to-transparent"></div>
+              <span class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-espresso/85 text-white text-[9px] font-bold uppercase tracking-wider">
+                ${b.region}
+              </span>
+              <div class="absolute bottom-2 left-2.5 right-2.5 text-white">
+                <div class="font-serif font-bold text-xs leading-tight truncate">${b.city}</div>
+                <div class="text-[10px] text-white/75 truncate">${b.name}</div>
+              </div>
+            </div>
+          </button>
+        `).join('');
+
+        this.thumbsEl.querySelectorAll('.branch-thumb-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.thumbIdx || '0', 10);
+            this.goToSlide(idx);
+          });
+        });
+      }
+
+      renderMarquee() {
+        if (!this.marqueeEl) return;
+        const doubled = [...this.marqueeSnapshots, ...this.marqueeSnapshots];
+        this.marqueeEl.innerHTML = doubled.map(s => `
+          <div class="w-64 sm:w-72 shrink-0 rounded-2xl overflow-hidden border border-latte bg-cream shadow-sm group cursor-pointer"
+            onclick="window.authSystem?.openModal('signin')">
+            <div class="h-40 overflow-hidden relative">
+              <img src="${s.img}" alt="${s.branch}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-espresso/80 via-transparent to-transparent"></div>
+              <div class="absolute bottom-3 left-3.5 right-3.5 text-white flex items-end justify-between">
+                <div>
+                  <div class="text-[10px] uppercase tracking-wider font-extrabold text-caramel">${s.tag}</div>
+                  <div class="font-serif font-bold text-sm">${s.branch}</div>
+                </div>
+                <span class="w-7 h-7 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs">→</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      updatePositions() {
+        const total = this.filteredBranches.length;
+        const cards = this.stageEl.querySelectorAll('.branch-slide-card');
+
+        cards.forEach((card, idx) => {
+          card.classList.remove('is-active', 'is-prev', 'is-next', 'is-hidden');
+          const prevIdx = (this.activeIndex - 1 + total) % total;
+          const nextIdx = (this.activeIndex + 1) % total;
+
+          if (idx === this.activeIndex) {
+            card.classList.add('is-active');
+          } else if (idx === prevIdx && total > 1) {
+            card.classList.add('is-prev');
+          } else if (idx === nextIdx && total > 2) {
+            card.classList.add('is-next');
+          } else if (idx === nextIdx && total === 2) {
+            card.classList.add('is-next');
+          } else {
+            card.classList.add('is-hidden');
+          }
+        });
+
+        // Update thumbnails active highlight
+        if (this.thumbsEl) {
+          this.thumbsEl.querySelectorAll('.branch-thumb-btn').forEach((btn, idx) => {
+            if (idx === this.activeIndex) {
+              btn.classList.add('active-thumb');
+            } else {
+              btn.classList.remove('active-thumb');
+            }
+          });
+        }
+
+        // Update slide counter
+        if (this.counterEl) {
+          const cur = String(this.activeIndex + 1).padStart(2, '0');
+          const max = String(total).padStart(2, '0');
+          this.counterEl.textContent = `${cur} / ${max}`;
+        }
+      }
+
+      goToSlide(idx) {
+        const total = this.filteredBranches.length;
+        if (!total) return;
+        this.activeIndex = (idx + total) % total;
+        this.progress = 0;
+        if (this.barEl) this.barEl.style.width = '0%';
+        this.updatePositions();
+      }
+
+      nextSlide() {
+        this.goToSlide(this.activeIndex + 1);
+      }
+
+      prevSlide() {
+        this.goToSlide(this.activeIndex - 1);
+      }
+
+      filterByRegion(region) {
+        if (region === 'all') {
+          this.filteredBranches = [...this.allBranches];
+        } else {
+          this.filteredBranches = this.allBranches.filter(b => b.region === region);
+        }
+        this.activeIndex = 0;
+        this.progress = 0;
+        this.renderSlides();
+        this.renderThumbs();
+        this.updatePositions();
+      }
+
+      bindEvents() {
+        document.getElementById('branch-prev-btn')?.addEventListener('click', () => this.prevSlide());
+        document.getElementById('branch-next-btn')?.addEventListener('click', () => this.nextSlide());
+
+        // Play / Pause button
+        const playBtn = document.getElementById('branch-play-toggle');
+        const playLabel = document.getElementById('branch-play-label');
+        playBtn?.addEventListener('click', () => {
+          this.isPlaying = !this.isPlaying;
+          if (playLabel) playLabel.textContent = this.isPlaying ? 'Auto-Playing' : 'Paused';
+          const icon = document.getElementById('branch-play-icon');
+          if (icon) {
+            icon.setAttribute('data-lucide', this.isPlaying ? 'pause' : 'play');
+            if (window.lucide) window.lucide.createIcons();
+          }
+        });
+
+        // Pause autoplay while hovering over the main stage
+        this.stageEl.addEventListener('mouseenter', () => { this.isHoverPaused = true; });
+        this.stageEl.addEventListener('mouseleave', () => { this.isHoverPaused = false; });
+
+        // Region filter pills
+        document.querySelectorAll('.branch-region-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.branch-region-btn').forEach(b => {
+              b.className = 'branch-region-btn px-4 py-2 rounded-xl text-xs font-semibold bg-cream text-bark hover:text-espresso border border-latte transition-all';
+            });
+            btn.className = 'branch-region-btn px-4 py-2 rounded-xl text-xs font-bold bg-espresso text-white border border-espresso transition-all shadow-sm';
+            this.filterByRegion(btn.dataset.region || 'all');
+          });
+        });
+
+        // Touch / Mouse Drag Swipe Support
+        let startX = 0;
+        let isDragging = false;
+        this.stageEl.addEventListener('pointerdown', (e) => {
+          startX = e.clientX;
+          isDragging = true;
+        });
+        this.stageEl.addEventListener('pointerup', (e) => {
+          if (!isDragging) return;
+          isDragging = false;
+          const diff = e.clientX - startX;
+          if (Math.abs(diff) > 45) {
+            if (diff < 0) this.nextSlide();
+            else this.prevSlide();
+          }
+        });
+
+        // Keyboard Left / Right Arrows
+        document.addEventListener('keydown', (e) => {
+          const modal = document.getElementById('auth-modal');
+          if (modal && !modal.classList.contains('hidden')) return;
+          if (e.key === 'ArrowRight') this.nextSlide();
+          if (e.key === 'ArrowLeft') this.prevSlide();
+        });
+      }
+
+      startAutoplayLoop() {
+        const tick = (now) => {
+          const dt = now - this.lastTick;
+          this.lastTick = now;
+
+          if (this.isPlaying && !this.isHoverPaused && this.filteredBranches.length > 1) {
+            this.progress += dt;
+            const pct = Math.min((this.progress / this.slideDuration) * 100, 100);
+            if (this.barEl) this.barEl.style.width = `${pct}%`;
+
+            if (this.progress >= this.slideDuration) {
+              this.nextSlide();
+            }
+          }
+
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      window.authSystem = new AuthSystem();
+      window.branchCarousel = new BranchCarouselEngine();
+
+      // Mobile Navigation Drawer Toggle
+      const mobBtn = document.getElementById('landing-mobile-menu-btn');
+      const mobDrawer = document.getElementById('landing-mobile-drawer');
+      if (mobBtn && mobDrawer) {
+        mobBtn.addEventListener('click', () => {
+          mobDrawer.classList.toggle('hidden');
+        });
+        mobDrawer.querySelectorAll('a, button').forEach(el => {
+          el.addEventListener('click', () => mobDrawer.classList.add('hidden'));
+        });
+      }
+
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+  <script src="js/motion.js"></script>
+
+</body>
+</html>

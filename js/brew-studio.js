@@ -124,11 +124,9 @@ class BrewStudio {
     iceButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         iceButtons.forEach(b => {
-          b.classList.remove("border-amber-500", "bg-amber-950/40", "text-amber-300");
-          b.classList.add("border-stone-700", "bg-stone-900/60", "text-stone-300");
+          b.className = "studio-ice-btn p-2.5 rounded-xl text-xs border border-[#E8DDCE] bg-white text-[#634F44] hover:border-[#C2782A] font-semibold";
         });
-        btn.classList.add("border-amber-500", "bg-amber-950/40", "text-amber-300");
-        btn.classList.remove("border-stone-700", "bg-stone-900/60", "text-stone-300");
+        btn.className = "studio-ice-btn p-2.5 rounded-xl text-xs border border-[#C2782A] bg-[#FDF9F4] text-[#C2782A] font-bold";
         this.state.ice = btn.dataset.ice;
         this.updatePreview();
         if (window.cafeAudio) window.cafeAudio.playChime('pop');
@@ -152,11 +150,9 @@ class BrewStudio {
     sizeBtns.forEach(btn => {
       btn.addEventListener("click", () => {
         sizeBtns.forEach(b => {
-          b.classList.remove("bg-amber-500", "text-stone-950", "font-bold");
-          b.classList.add("bg-stone-800", "text-stone-300");
+          b.className = "studio-size-btn p-3.5 rounded-2xl border border-[#E8DDCE] bg-white text-[#24140B] text-xs font-bold flex items-center justify-between transition-all";
         });
-        btn.classList.add("bg-amber-500", "text-stone-950", "font-bold");
-        btn.classList.remove("bg-stone-800", "text-stone-300");
+        btn.className = "studio-size-btn p-3.5 rounded-2xl border border-[#24140B] bg-[#24140B] text-white text-xs font-bold flex items-center justify-between shadow-md transition-all";
         this.state.size = btn.dataset.size;
         this.updatePreview();
         if (window.cafeAudio) window.cafeAudio.playChime('pop');
@@ -196,14 +192,29 @@ class BrewStudio {
   updatePreview() {
     const stats = this.calculateStats();
 
-    // Update Text Elements
+    // Update Text Elements with Pop Motion
     const priceEl = document.getElementById("studio-live-price");
     const calEl = document.getElementById("studio-live-cal");
     const cafEl = document.getElementById("studio-live-caf");
 
+    [priceEl, calEl, cafEl].forEach(el => {
+      if (!el) return;
+      el.classList.remove("stat-pop-active");
+      void el.offsetWidth;
+      el.classList.add("stat-pop-active");
+    });
+
     if (priceEl) priceEl.textContent = `₱${stats.price}`;
     if (calEl) calEl.textContent = `~${stats.calories} kcal`;
     if (cafEl) cafEl.textContent = stats.caffeine;
+
+    // Trigger Cup Splash Pulse
+    const cupSvg = document.querySelector("#brew-studio svg");
+    if (cupSvg) {
+      cupSvg.classList.remove("cup-splash-active");
+      void cupSvg.offsetWidth;
+      cupSvg.classList.add("cup-splash-active");
+    }
 
     // SVG Cup Layers Update
     const baseLayer = document.getElementById("svg-base-layer");
@@ -213,20 +224,27 @@ class BrewStudio {
     const drizzleLayer = document.getElementById("svg-drizzle-layer");
     const foamLayer = document.getElementById("svg-foam-layer");
 
-    // Dynamic Base Color
+    // Dynamic Base Color & Liquid Fill Level (Regular vs Large)
     if (baseLayer) {
+      const topY = this.state.size === "large" ? 58 : 74;
+      const heightVal = 310 - topY;
       baseLayer.setAttribute("fill", this.state.base.color);
-      baseLayer.style.transition = "fill 0.4s ease";
+      baseLayer.setAttribute("y", String(topY));
+      baseLayer.setAttribute("height", String(heightVal));
     }
 
-    // Milk / Crema blend
+    // Milk / Crema blend with dynamic thickness
     if (milkLayer) {
+      const topY = this.state.size === "large" ? 58 : 74;
+      const milkHeight = 75 + (this.state.sweetness * 0.28);
+      milkLayer.setAttribute("y", String(topY));
+      milkLayer.setAttribute("height", String(milkHeight));
       if (this.state.milk.id === "crema-cloud" || this.state.milk.id === "cream-cheese") {
         milkLayer.setAttribute("opacity", "0.95");
         milkLayer.setAttribute("fill", this.state.milk.color);
         if (foamLayer) foamLayer.classList.remove("hidden");
       } else {
-        milkLayer.setAttribute("opacity", "0.7");
+        milkLayer.setAttribute("opacity", "0.75");
         milkLayer.setAttribute("fill", this.state.milk.color);
         if (foamLayer) foamLayer.classList.add("hidden");
       }
@@ -245,10 +263,16 @@ class BrewStudio {
       }
     }
 
-    // Pearls / Toppings visibility
+    // Pearls / Toppings visibility with Drop & Bounce Physics
     if (pearlsGroup) {
       if (this.state.toppings.includes("brown-sugar-pearls") || this.state.toppings.includes("crystal-agar") || this.state.toppings.includes("coffee-jelly")) {
         pearlsGroup.style.display = "block";
+        pearlsGroup.classList.remove("pearl-drop-anim");
+        void pearlsGroup.offsetWidth;
+        pearlsGroup.classList.add("pearl-drop-anim");
+        pearlsGroup.querySelectorAll("circle").forEach((c, idx) => {
+          c.style.animationDelay = `${idx * 35}ms`;
+        });
       } else {
         pearlsGroup.style.display = "none";
       }
@@ -295,7 +319,7 @@ class BrewStudio {
     };
 
     if (window.brewCart) {
-      const addBtn = document.getElementById("btn-studio-add-cart");
+      const addBtn = document.getElementById("btn-add-studio-drink");
       if (window.flyToCart && addBtn) window.flyToCart(addBtn, '🎨');
 
       window.brewCart.addItem(customItem, 1, customItem.customDetails);

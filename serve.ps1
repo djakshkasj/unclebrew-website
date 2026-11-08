@@ -22,7 +22,7 @@ try {
 
         $urlPath = $request.Url.LocalPath.TrimStart('/')
         if ([string]::IsNullOrWhiteSpace($urlPath)) {
-            $urlPath = "index.html"
+            $urlPath = "landing.html"
         }
 
         $localFilePath = Join-Path $folder $urlPath

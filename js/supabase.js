@@ -94,20 +94,58 @@ class UncleBrewSupabase {
 
   /**
    * Save customer order to Supabase 'orders' table
+   * Automatically attaches the authenticated user_id & brewer_id and caches locally per user.
    */
   async createOrder(orderPayload) {
+    const userId = window.brewAuth?.userId || this.userId || "guest";
+    const brewerId = window.brewAuth?.brewerId || "UB-GUEST";
+    const userEmail = orderPayload.customerEmail || window.brewAuth?.userEmail || null;
+
+    // 1. Always save a copy to user's local order history for instant retrieval
+    const localRecord = {
+      id: orderPayload.orderId,
+      created_at: new Date().toISOString(),
+      user_id: userId,
+      brewer_id: brewerId,
+      order_id: orderPayload.orderId,
+      customer_name: orderPayload.customerName,
+      customer_phone: orderPayload.customerPhone,
+      customer_email: userEmail,
+      delivery_address: orderPayload.deliveryAddress,
+      fulfillment_type: orderPayload.fulfillmentType,
+      branch: orderPayload.branch,
+      payment_method: orderPayload.paymentMethod,
+      items: orderPayload.items,
+      subtotal: orderPayload.subtotal,
+      discount: orderPayload.discount,
+      delivery_fee: orderPayload.deliveryFee,
+      total_amount: orderPayload.totalAmount,
+      status: 'received'
+    };
+
+    try {
+      const storageKey = `unclebrew_orders_${userId}`;
+      const existing = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      existing.unshift(localRecord);
+      localStorage.setItem(storageKey, JSON.stringify(existing.slice(0, 50)));
+    } catch (e) {}
+
     if (!this.client) {
-      console.warn("[UncleBrew Supabase] Supabase client not configured yet. Saving to local session.");
-      return { success: true, localOnly: true, data: orderPayload };
+      console.warn("[UncleBrew Supabase] Supabase client not configured yet. Saved to local user history.");
+      return { success: true, localOnly: true, data: localRecord };
     }
 
     try {
-      const { data, error } = await this.client
+      // Attempt full v2 insert with user_id, brewer_id, customer_email
+      let { data, error } = await this.client
         .from('orders')
         .insert([{
+          user_id: userId,
+          brewer_id: brewerId,
           order_id: orderPayload.orderId,
           customer_name: orderPayload.customerName,
           customer_phone: orderPayload.customerPhone,
+          customer_email: userEmail,
           delivery_address: orderPayload.deliveryAddress,
           fulfillment_type: orderPayload.fulfillmentType,
           branch: orderPayload.branch,
@@ -121,15 +159,39 @@ class UncleBrewSupabase {
         }])
         .select();
 
-      if (error) {
-        console.error("[UncleBrew Supabase] Failed to insert order:", error);
-        return { success: false, error: error.message, data: orderPayload };
+      // Fallback if user hasn't run v2 ALTER TABLE yet on Supabase
+      if (error && (error.message?.includes("column") || error.code === "42703" || error.code === "PGRST204")) {
+        const retry = await this.client
+          .from('orders')
+          .insert([{
+            order_id: orderPayload.orderId,
+            customer_name: `${orderPayload.customerName} [${brewerId}]`,
+            customer_phone: orderPayload.customerPhone,
+            delivery_address: orderPayload.deliveryAddress,
+            fulfillment_type: orderPayload.fulfillmentType,
+            branch: orderPayload.branch,
+            payment_method: orderPayload.paymentMethod,
+            items: orderPayload.items,
+            subtotal: orderPayload.subtotal,
+            discount: orderPayload.discount,
+            delivery_fee: orderPayload.deliveryFee,
+            total_amount: orderPayload.totalAmount,
+            status: 'received'
+          }])
+          .select();
+        data = retry.data;
+        error = retry.error;
       }
 
-      return { success: true, localOnly: false, data: data[0] };
+      if (error) {
+        console.error("[UncleBrew Supabase] Failed to insert order:", error);
+        return { success: false, error: error.message, data: localRecord };
+      }
+
+      return { success: true, localOnly: false, data: data?.[0] || localRecord };
     } catch (e) {
       console.error("[UncleBrew Supabase] Network exception inserting order:", e);
-      return { success: false, error: e.message, data: orderPayload };
+      return { success: false, error: e.message, data: localRecord };
     }
   }
 
