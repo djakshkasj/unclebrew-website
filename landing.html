@@ -22,6 +22,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/security.js"></script>
   <link rel="stylesheet" href="css/styles.css" />
 
   <script>
@@ -1014,8 +1015,11 @@
             <i data-lucide="coffee" class="text-caramel w-4 h-4"></i>
           </div>
           <div>
-            <div class="font-serif font-bold text-espresso text-sm leading-none">Uncle Brew PH</div>
-            <div class="text-bark text-[10px] leading-none mt-0.5">Your café account</div>
+            <div class="font-serif font-bold text-espresso text-sm leading-none flex items-center gap-1.5">
+              <span>Uncle Brew PH</span>
+              <span class="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 font-sans text-[9px] font-bold">🔒 AES-256 & SQLi Shield</span>
+            </div>
+            <div class="text-bark text-[10px] leading-none mt-0.5">Encrypted café account & order identity</div>
           </div>
         </div>
         <button id="btn-auth-close" class="w-8 h-8 bg-cream hover:bg-latte rounded-full flex items-center justify-center transition-colors">
@@ -1262,14 +1266,14 @@
             try {
               const { data: { session } } = await this.client.auth.getSession();
               if (session?.user) {
-                this.saveLocalSession(session.user.id, session.user.email, session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
+                await this.saveLocalSession(session.user.id, session.user.email, session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
                 window.location.href = 'index.html';
                 return;
               }
             } catch (e) {}
           }
-          const existingLocal = localStorage.getItem('unclebrew_user_session');
-          if (existingLocal) {
+          const existingLocal = await window.brewSecurity?.getSecureStorage('unclebrew_user_session');
+          if (existingLocal && existingLocal.id) {
             window.location.href = 'index.html';
             return;
           }
@@ -1280,19 +1284,26 @@
         if (params.get('auth') === 'signup') this.openModal('signup');
       }
 
-      saveLocalSession(id, email, fullName) {
-        const brewerId = AuthSystem.generateBrewerId(id || email || fullName);
+      async saveLocalSession(id, email, fullName) {
+        const cleanEmail = window.brewSecurity ? window.brewSecurity.sanitizeInput(email, 120) : email;
+        const cleanName = window.brewSecurity ? window.brewSecurity.sanitizeInput(fullName, 80) : fullName;
+        const brewerId = AuthSystem.generateBrewerId(id || cleanEmail || cleanName);
         const userObj = {
           id: id || ('user-' + brewerId.toLowerCase()),
-          email: email,
+          email: cleanEmail,
           brewer_id: brewerId,
+          encrypted_at: new Date().toISOString(),
           user_metadata: {
-            full_name: fullName,
-            display_name: fullName,
+            full_name: cleanName,
+            display_name: cleanName,
             brewer_id: brewerId
           }
         };
-        localStorage.setItem('unclebrew_user_session', JSON.stringify(userObj));
+        if (window.brewSecurity) {
+          await window.brewSecurity.setSecureStorage('unclebrew_user_session', userObj);
+        } else {
+          localStorage.setItem('unclebrew_user_session', JSON.stringify(userObj));
+        }
         return userObj;
       }
 
@@ -1392,9 +1403,23 @@
       }
 
       async handleSignIn() {
-        const email = document.getElementById('signin-email')?.value?.trim().toLowerCase();
+        const rawEmail = document.getElementById('signin-email')?.value?.trim().toLowerCase();
         const password = document.getElementById('signin-password')?.value;
-        if (!email || !password) { this.showMessage('signin', 'Please enter your email and password.'); return; }
+        if (!rawEmail || !password) { this.showMessage('signin', 'Please enter your email and password.'); return; }
+
+        // SQL Injection & XSS Firewall Inspection
+        if (window.brewSecurity) {
+          const emailCheck = window.brewSecurity.inspectInput(rawEmail);
+          const pwCheck = window.brewSecurity.inspectInput(password);
+          if (emailCheck.blocked || pwCheck.blocked) {
+            const reason = emailCheck.reason || pwCheck.reason;
+            window.brewSecurity.showSecurityAlert(`🛡️ ${reason}`);
+            this.showMessage('signin', `🛡️ Security Block: ${reason}`);
+            return;
+          }
+        }
+
+        const email = window.brewSecurity ? window.brewSecurity.sanitizeInput(rawEmail, 120) : rawEmail;
         this.setLoading('form-signin', true);
 
         try {
@@ -1402,21 +1427,32 @@
             const { data, error } = await this.client.auth.signInWithPassword({ email, password });
             if (!error && data?.user) {
               const name = data.user.user_metadata?.full_name || email.split('@')[0];
-              const profile = this.saveLocalSession(data.user.id, email, name);
-              this.showMessage('signin', `☕ Welcome back, ${name}! ID: ${profile.brewer_id}`, 'success');
+              const profile = await this.saveLocalSession(data.user.id, email, name);
+              this.showMessage('signin', `🔒 Authenticated! Welcome back, ${name} (${profile.brewer_id})`, 'success');
               setTimeout(() => window.location.href = 'index.html', 750);
               return;
             }
           }
 
-          // Check local registered users registry (for instant sign-in even before email confirmation)
-          const registry = JSON.parse(localStorage.getItem('unclebrew_registered_users') || '{}');
-          if (registry[email] && registry[email].password === password) {
-            const u = registry[email];
-            const profile = this.saveLocalSession(u.id, email, u.full_name);
-            this.showMessage('signin', `☕ Welcome back, ${u.full_name}! ID: ${profile.brewer_id}`, 'success');
-            setTimeout(() => window.location.href = 'index.html', 750);
-            return;
+          // Check AES-256 encrypted local registered users registry with PBKDF2-SHA256 hash verification
+          const registry = (await window.brewSecurity?.getSecureStorage('unclebrew_registered_users', {})) || {};
+          if (registry[email]) {
+            const isValid = await window.brewSecurity.verifyPassword(password, registry[email]);
+            if (isValid) {
+              const u = registry[email];
+              // Upgrade legacy record to PBKDF2 hash if needed
+              if (!u.password_hash && window.brewSecurity) {
+                const hashed = await window.brewSecurity.hashPassword(password);
+                u.password_hash = hashed.hash;
+                u.password_salt = hashed.salt;
+                delete u.password;
+                await window.brewSecurity.setSecureStorage('unclebrew_registered_users', registry);
+              }
+              const profile = await this.saveLocalSession(u.id, email, u.full_name);
+              this.showMessage('signin', `🔒 Verified via PBKDF2-SHA256! Welcome, ${u.full_name} (${profile.brewer_id})`, 'success');
+              setTimeout(() => window.location.href = 'index.html', 750);
+              return;
+            }
           }
 
           this.showMessage('signin', 'Invalid email or password. Try creating an account or use Instant Brewer Pass.');
@@ -1426,13 +1462,29 @@
       }
 
       async handleSignUp() {
-        const name = document.getElementById('signup-name')?.value?.trim();
-        const email = document.getElementById('signup-email')?.value?.trim().toLowerCase();
+        const rawName = document.getElementById('signup-name')?.value?.trim();
+        const rawEmail = document.getElementById('signup-email')?.value?.trim().toLowerCase();
         const password = document.getElementById('signup-password')?.value;
         const confirm = document.getElementById('signup-confirm')?.value;
         const agreed = document.getElementById('signup-agree')?.checked;
 
-        if (!name || !email || !password) { this.showMessage('signup', 'Please fill in all required fields.'); return; }
+        if (!rawName || !rawEmail || !password) { this.showMessage('signup', 'Please fill in all required fields.'); return; }
+
+        // SQL Injection & XSS Firewall Inspection
+        if (window.brewSecurity) {
+          for (const fieldVal of [rawName, rawEmail, password]) {
+            const check = window.brewSecurity.inspectInput(fieldVal);
+            if (check.blocked) {
+              window.brewSecurity.showSecurityAlert(`🛡️ ${check.reason}`);
+              this.showMessage('signup', `🛡️ Security Block: ${check.reason}`);
+              return;
+            }
+          }
+        }
+
+        const name = window.brewSecurity ? window.brewSecurity.sanitizeInput(rawName, 80) : rawName;
+        const email = window.brewSecurity ? window.brewSecurity.sanitizeInput(rawEmail, 120) : rawEmail;
+
         if (password !== confirm) { this.showMessage('signup', 'Passwords do not match.'); return; }
         if (password.length < 8) { this.showMessage('signup', 'Password must be at least 8 characters.'); return; }
         if (!agreed) { this.showMessage('signup', 'Please agree to the Terms & Privacy Policy.'); return; }
@@ -1443,7 +1495,7 @@
 
         try {
           if (this.client) {
-            const { data, error } = await this.client.auth.signUp({
+            const { data } = await this.client.auth.signUp({
               email,
               password,
               options: { data: { full_name: name, display_name: name, brewer_id: brewerId } }
@@ -1452,30 +1504,47 @@
           }
         } catch (e) {}
 
-        // Save in local user registry & active session so user gets immediate access
-        const registry = JSON.parse(localStorage.getItem('unclebrew_registered_users') || '{}');
-        registry[email] = { id: userId, email, full_name: name, password, brewer_id: brewerId };
-        localStorage.setItem('unclebrew_registered_users', JSON.stringify(registry));
+        // Hash password with PBKDF2-HMAC-SHA256 (100,000 iterations + random 128-bit salt) & encrypt registry with AES-256-GCM
+        const registry = (await window.brewSecurity?.getSecureStorage('unclebrew_registered_users', {})) || {};
+        const pwHashObj = await window.brewSecurity.hashPassword(password);
+        registry[email] = {
+          id: userId,
+          email,
+          full_name: name,
+          password_hash: pwHashObj.hash,
+          password_salt: pwHashObj.salt,
+          hash_algo: pwHashObj.algorithm,
+          brewer_id: brewerId
+        };
+        await window.brewSecurity.setSecureStorage('unclebrew_registered_users', registry);
 
-        const profile = this.saveLocalSession(userId, email, name);
+        const profile = await this.saveLocalSession(userId, email, name);
         this.setLoading('form-signup', false);
-        this.showMessage('signup', `🎉 Account created! Your unique Brewer ID is ${profile.brewer_id}. Entering café...`, 'success');
+        this.showMessage('signup', `🔒 Encrypted Account Created! Brewer ID: ${profile.brewer_id}. Entering café...`, 'success');
         setTimeout(() => window.location.href = 'index.html', 950);
       }
 
-      handleQuickGuest() {
+      async handleQuickGuest() {
         const randomNum = Math.floor(1000 + Math.random() * 9000);
         const email = `brewer${randomNum}@unclebrew.ph`;
         const name = `Brewer #${randomNum}`;
         const brewerId = AuthSystem.generateBrewerId(email);
-        const profile = this.saveLocalSession(`user-${brewerId.toLowerCase()}`, email, name);
-        this.showMessage(this.activeTab, `⚡ Instant Brewer Pass activated! ID: ${profile.brewer_id}. Redirecting...`, 'success');
+        const profile = await this.saveLocalSession(`user-${brewerId.toLowerCase()}`, email, name);
+        this.showMessage(this.activeTab, `⚡ Instant Brewer Pass (AES-256 Encrypted) activated! ID: ${profile.brewer_id}`, 'success');
         setTimeout(() => window.location.href = 'index.html', 650);
       }
 
       async handleReset() {
-        const email = document.getElementById('reset-email')?.value?.trim();
-        if (!email) { this.showMessage('reset', 'Please enter your email address.'); return; }
+        const rawEmail = document.getElementById('reset-email')?.value?.trim();
+        if (!rawEmail) { this.showMessage('reset', 'Please enter your email address.'); return; }
+        if (window.brewSecurity) {
+          const check = window.brewSecurity.inspectInput(rawEmail);
+          if (check.blocked) {
+            this.showMessage('reset', `🛡️ Security Block: ${check.reason}`);
+            return;
+          }
+        }
+        const email = window.brewSecurity ? window.brewSecurity.sanitizeInput(rawEmail, 120) : rawEmail;
         this.setLoading('form-reset', true);
         if (this.client) {
           const { error } = await this.client.auth.resetPasswordForEmail(email, {

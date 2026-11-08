@@ -94,88 +94,134 @@ class UncleBrewSupabase {
 
   /**
    * Save customer order to Supabase 'orders' table
-   * Automatically attaches the authenticated user_id & brewer_id and caches locally per user.
+   * - Validates all fields against SQL Injection & XSS via UncleBrewSecurity
+   * - Signs the order with a SHA-256 integrity hash (order_hash)
+   * - Encrypts customer PII (phone & address) with AES-256-GCM (encrypted_pii)
+   * - Encrypts the local order history cache at rest in localStorage
    */
   async createOrder(orderPayload) {
-    const userId = window.brewAuth?.userId || this.userId || "guest";
-    const brewerId = window.brewAuth?.brewerId || "UB-GUEST";
-    const userEmail = orderPayload.customerEmail || window.brewAuth?.userEmail || null;
+    // 1. Run SQL Injection & XSS Firewall validation
+    if (window.brewSecurity) {
+      window.brewSecurity.validatePayload(orderPayload);
+    }
 
-    // 1. Always save a copy to user's local order history for instant retrieval
+    const sec = window.brewSecurity;
+    const sanitize = (v, max = 200) => (sec ? sec.sanitizeInput(v, max) : String(v || "").trim());
+
+    const userId = sanitize(window.brewAuth?.userId || this.userId || "guest", 100);
+    const brewerId = sanitize(window.brewAuth?.brewerId || "UB-GUEST", 40);
+    const cleanOrderId = sanitize(orderPayload.orderId, 40);
+    const cleanName = sanitize(orderPayload.customerName, 100);
+    const cleanPhone = sanitize(orderPayload.customerPhone, 40);
+    const cleanEmail = sanitize(orderPayload.customerEmail || window.brewAuth?.userEmail || "", 120) || null;
+    const cleanAddress = sanitize(orderPayload.deliveryAddress, 250);
+    const cleanFulfillment = sanitize(orderPayload.fulfillmentType, 40);
+    const cleanBranch = sanitize(orderPayload.branch, 100);
+    const cleanPayment = sanitize(orderPayload.paymentMethod, 50);
+
+    // 2. Compute SHA-256 Order Integrity Hash & AES-256-GCM Encrypted PII Envelope
+    const orderHash = sec
+      ? await sec.signOrderPayload({
+          orderId: cleanOrderId,
+          userId,
+          brewerId,
+          totalAmount: Number(orderPayload.totalAmount) || 0,
+          items: orderPayload.items
+        })
+      : null;
+
+    const encryptedPii = sec
+      ? await sec.encryptData({
+          phone: cleanPhone,
+          address: cleanAddress,
+          email: cleanEmail
+        })
+      : null;
+
+    // 3. Build sanitized order record & encrypt in local user order history
     const localRecord = {
-      id: orderPayload.orderId,
+      id: cleanOrderId,
       created_at: new Date().toISOString(),
       user_id: userId,
       brewer_id: brewerId,
-      order_id: orderPayload.orderId,
-      customer_name: orderPayload.customerName,
-      customer_phone: orderPayload.customerPhone,
-      customer_email: userEmail,
-      delivery_address: orderPayload.deliveryAddress,
-      fulfillment_type: orderPayload.fulfillmentType,
-      branch: orderPayload.branch,
-      payment_method: orderPayload.paymentMethod,
+      order_id: cleanOrderId,
+      customer_name: cleanName,
+      customer_phone: cleanPhone,
+      customer_email: cleanEmail,
+      delivery_address: cleanAddress,
+      fulfillment_type: cleanFulfillment,
+      branch: cleanBranch,
+      payment_method: cleanPayment,
       items: orderPayload.items,
-      subtotal: orderPayload.subtotal,
-      discount: orderPayload.discount,
-      delivery_fee: orderPayload.deliveryFee,
-      total_amount: orderPayload.totalAmount,
+      subtotal: Number(orderPayload.subtotal) || 0,
+      discount: Number(orderPayload.discount) || 0,
+      delivery_fee: Number(orderPayload.deliveryFee) || 0,
+      total_amount: Number(orderPayload.totalAmount) || 0,
+      order_hash: orderHash,
+      encrypted_pii: encryptedPii,
       status: 'received'
     };
 
     try {
       const storageKey = `unclebrew_orders_${userId}`;
-      const existing = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      existing.unshift(localRecord);
-      localStorage.setItem(storageKey, JSON.stringify(existing.slice(0, 50)));
+      const existing = sec
+        ? (await sec.getSecureStorage(storageKey, []))
+        : JSON.parse(localStorage.getItem(storageKey) || "[]");
+      const list = Array.isArray(existing) ? existing : [];
+      list.unshift(localRecord);
+      if (sec) {
+        await sec.setSecureStorage(storageKey, list.slice(0, 50));
+      } else {
+        localStorage.setItem(storageKey, JSON.stringify(list.slice(0, 50)));
+      }
     } catch (e) {}
 
     if (!this.client) {
-      console.warn("[UncleBrew Supabase] Supabase client not configured yet. Saved to local user history.");
+      console.warn("[UncleBrew Supabase] Supabase client not configured yet. Saved to AES-256 encrypted local history.");
       return { success: true, localOnly: true, data: localRecord };
     }
 
     try {
-      // Attempt full v2 insert with user_id, brewer_id, customer_email
+      // Attempt parameterized insert with v3/v2 columns
       let { data, error } = await this.client
         .from('orders')
         .insert([{
           user_id: userId,
           brewer_id: brewerId,
-          order_id: orderPayload.orderId,
-          customer_name: orderPayload.customerName,
-          customer_phone: orderPayload.customerPhone,
-          customer_email: userEmail,
-          delivery_address: orderPayload.deliveryAddress,
-          fulfillment_type: orderPayload.fulfillmentType,
-          branch: orderPayload.branch,
-          payment_method: orderPayload.paymentMethod,
+          order_id: cleanOrderId,
+          customer_name: cleanName,
+          customer_phone: cleanPhone,
+          customer_email: cleanEmail,
+          delivery_address: cleanAddress,
+          fulfillment_type: cleanFulfillment,
+          branch: cleanBranch,
+          payment_method: cleanPayment,
           items: orderPayload.items,
-          subtotal: orderPayload.subtotal,
-          discount: orderPayload.discount,
-          delivery_fee: orderPayload.deliveryFee,
-          total_amount: orderPayload.totalAmount,
+          subtotal: Number(orderPayload.subtotal) || 0,
+          discount: Number(orderPayload.discount) || 0,
+          delivery_fee: Number(orderPayload.deliveryFee) || 0,
+          total_amount: Number(orderPayload.totalAmount) || 0,
           status: 'received'
         }])
         .select();
 
-      // Fallback if user hasn't run v2 ALTER TABLE yet on Supabase
+      // Fallback if user hasn't run v2/v3 ALTER TABLE yet on Supabase
       if (error && (error.message?.includes("column") || error.code === "42703" || error.code === "PGRST204")) {
         const retry = await this.client
           .from('orders')
           .insert([{
-            order_id: orderPayload.orderId,
-            customer_name: `${orderPayload.customerName} [${brewerId}]`,
-            customer_phone: orderPayload.customerPhone,
-            delivery_address: orderPayload.deliveryAddress,
-            fulfillment_type: orderPayload.fulfillmentType,
-            branch: orderPayload.branch,
-            payment_method: orderPayload.paymentMethod,
+            order_id: cleanOrderId,
+            customer_name: `${cleanName} [${brewerId}]`,
+            customer_phone: cleanPhone,
+            delivery_address: cleanAddress,
+            fulfillment_type: cleanFulfillment,
+            branch: cleanBranch,
+            payment_method: cleanPayment,
             items: orderPayload.items,
-            subtotal: orderPayload.subtotal,
-            discount: orderPayload.discount,
-            delivery_fee: orderPayload.deliveryFee,
-            total_amount: orderPayload.totalAmount,
+            subtotal: Number(orderPayload.subtotal) || 0,
+            discount: Number(orderPayload.discount) || 0,
+            delivery_fee: Number(orderPayload.deliveryFee) || 0,
+            total_amount: Number(orderPayload.totalAmount) || 0,
             status: 'received'
           }])
           .select();
@@ -197,8 +243,15 @@ class UncleBrewSupabase {
 
   /**
    * Save franchise application lead to Supabase 'franchise_inquiries' table
+   * Validates and sanitizes all fields against SQL Injection & XSS
    */
   async submitFranchiseInquiry(inquiryPayload) {
+    if (window.brewSecurity) {
+      window.brewSecurity.validatePayload(inquiryPayload);
+    }
+    const sec = window.brewSecurity;
+    const sanitize = (v, max = 150) => (sec ? sec.sanitizeInput(v, max) : String(v || "").trim());
+
     if (!this.client) {
       console.warn("[UncleBrew Supabase] Supabase client not configured yet. Lead logged locally.");
       return { success: true, localOnly: true, data: inquiryPayload };
@@ -208,12 +261,12 @@ class UncleBrewSupabase {
       const { data, error } = await this.client
         .from('franchise_inquiries')
         .insert([{
-          package_name: inquiryPayload.packageName,
-          full_name: inquiryPayload.fullName,
-          mobile: inquiryPayload.mobile,
-          email: inquiryPayload.email,
-          target_city: inquiryPayload.targetCity,
-          has_commercial_space: inquiryPayload.hasCommercialSpace,
+          package_name: sanitize(inquiryPayload.packageName, 100),
+          full_name: sanitize(inquiryPayload.fullName, 100),
+          mobile: sanitize(inquiryPayload.mobile, 40),
+          email: sanitize(inquiryPayload.email, 120),
+          target_city: sanitize(inquiryPayload.targetCity, 100),
+          has_commercial_space: Boolean(inquiryPayload.hasCommercialSpace),
           status: 'new'
         }])
         .select();

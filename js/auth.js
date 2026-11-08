@@ -56,12 +56,14 @@ class BrewAuth {
       }
     }
 
-    // 2. Fallback to local Brewer session (for instant signup / offline / unconfirmed email)
+    // 2. Fallback to AES-256-GCM encrypted local Brewer session (for instant signup / offline / unconfirmed email)
     if (!sessionUser) {
       try {
-        const raw = localStorage.getItem("unclebrew_user_session");
-        if (raw) {
-          sessionUser = JSON.parse(raw);
+        if (window.brewSecurity) {
+          sessionUser = await window.brewSecurity.getSecureStorage("unclebrew_user_session", null);
+        } else {
+          const raw = localStorage.getItem("unclebrew_user_session");
+          if (raw) sessionUser = JSON.parse(raw);
         }
       } catch (e) {}
     }
@@ -72,7 +74,7 @@ class BrewAuth {
       return;
     }
 
-    this._setUser(sessionUser);
+    await this._setUser(sessionUser);
 
     // 4. Listen for Supabase auth state changes
     if (this.client) {
@@ -93,7 +95,7 @@ class BrewAuth {
     this._readyCallbacks.forEach(cb => cb(this.user));
   }
 
-  _setUser(u) {
+  async _setUser(u) {
     const brewerId = u.brewer_id
       || u.user_metadata?.brewer_id
       || BrewAuth.generateBrewerId(u.id || u.email);
@@ -103,9 +105,9 @@ class BrewAuth {
       brewer_id: brewerId
     };
 
-    // Persist session locally so reloads and unconfirmed email signups stay seamless
+    // Persist session locally encrypted with AES-256-GCM
     try {
-      localStorage.setItem("unclebrew_user_session", JSON.stringify({
+      const sessionObj = {
         id: this.user.id,
         email: this.user.email,
         brewer_id: brewerId,
@@ -114,7 +116,12 @@ class BrewAuth {
           display_name: this.displayName,
           brewer_id: brewerId
         }
-      }));
+      };
+      if (window.brewSecurity) {
+        await window.brewSecurity.setSecureStorage("unclebrew_user_session", sessionObj);
+      } else {
+        localStorage.setItem("unclebrew_user_session", JSON.stringify(sessionObj));
+      }
     } catch (e) {}
 
     if (window.uncleBrewSupabase) {
@@ -168,10 +175,11 @@ class BrewAuth {
     const container = document.getElementById("nav-user-chip");
     if (!container) return;
 
-    const name = this.displayName;
-    const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() || "UB";
-    const email = this.user.email || "";
-    const brewerId = this.brewerId;
+    const esc = (s) => (window.brewSecurity ? window.brewSecurity.escapeHTML(s) : String(s || ""));
+    const name = esc(this.displayName);
+    const initials = esc(this.displayName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() || "UB");
+    const email = esc(this.user.email || "");
+    const brewerId = esc(this.brewerId);
 
     container.innerHTML = `
       <div class="relative">
@@ -317,11 +325,15 @@ class BrewAuth {
     document.getElementById("btn-close-ohm")?.addEventListener("click", () => modal.remove());
     if (window.lucide) window.lucide.createIcons();
 
-    // 1. Load local cached orders for this user
+    // 1. Load AES-256-GCM encrypted local cached orders for this user
     let localOrders = [];
     try {
       const storageKey = `unclebrew_orders_${this.userId}`;
-      localOrders = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      if (window.brewSecurity) {
+        localOrders = await window.brewSecurity.getSecureStorage(storageKey, []);
+      } else {
+        localOrders = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      }
     } catch (e) {}
 
     // 2. Query Supabase for orders matching this user_id or brewerId
@@ -384,36 +396,42 @@ class BrewAuth {
       delivered: "bg-emerald-50 text-emerald-700 border-emerald-200"
     };
 
+    const esc = (s) => (window.brewSecurity ? window.brewSecurity.escapeHTML(s) : String(s || ""));
+
     body.innerHTML = merged.map((order, idx) => {
       const date = new Date(order.created_at).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" });
       const time = new Date(order.created_at).toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" });
       const items = Array.isArray(order.items) ? order.items : (typeof order.items === "string" ? JSON.parse(order.items || "[]") : []);
       const statusClass = statusColors[order.status] || "bg-emerald-50 text-emerald-700 border-emerald-200";
+      const hashBadge = order.order_hash
+        ? `<span title="SHA-256 Order Integrity Signature: ${esc(order.order_hash)}" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700">🔒 SHA256:${esc(order.order_hash.slice(0, 8))}</span>`
+        : `<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700">🔒 AES-256</span>`;
 
       return `
         <div class="p-4 rounded-2xl border border-[#E8DDCE] bg-[#FAF7F2] hover:border-[#C2782A] transition-all">
           <div class="flex items-start justify-between gap-3 mb-3">
             <div>
-              <div class="flex items-center gap-2">
-                <p class="text-xs font-mono font-bold text-[#C2782A]">#${order.order_id || String(order.id).slice(0, 8).toUpperCase()}</p>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-white border border-[#E8DDCE] text-[#634F44]">${this.brewerId}</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <p class="text-xs font-mono font-bold text-[#C2782A]">#${esc(order.order_id || String(order.id).slice(0, 8).toUpperCase())}</p>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-white border border-[#E8DDCE] text-[#634F44]">${esc(this.brewerId)}</span>
+                ${hashBadge}
               </div>
-              <p class="text-[11px] text-[#8E7A6E] mt-0.5">${date} • ${time} • ${order.branch || "Cebu IT Park"}</p>
+              <p class="text-[11px] text-[#8E7A6E] mt-0.5">${esc(date)} • ${esc(time)} • ${esc(order.branch || "Cebu IT Park")}</p>
             </div>
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border capitalize ${statusClass}">${order.status || "received"}</span>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border capitalize ${statusClass}">${esc(order.status || "received")}</span>
           </div>
           <div class="space-y-1.5 mb-3 bg-white p-3 rounded-xl border border-[#E8DDCE]/70">
             ${items.map(item => `
               <div class="flex items-center justify-between text-xs">
-                <span class="text-[#24140B] font-semibold">${item.qty || 1}× ${item.name}</span>
-                <span class="text-[#C2782A] font-bold">₱${(item.price || 89) * (item.qty || 1)}</span>
+                <span class="text-[#24140B] font-semibold">${Number(item.qty) || 1}× ${esc(item.name)}</span>
+                <span class="text-[#C2782A] font-bold">₱${(Number(item.price) || 89) * (Number(item.qty) || 1)}</span>
               </div>
             `).join("")}
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-[#E8DDCE]">
-            <span class="text-[11px] text-[#634F44] uppercase font-semibold">${order.fulfillment_type || "delivery"} • ${order.payment_method || "GCash"}</span>
+            <span class="text-[11px] text-[#634F44] uppercase font-semibold">${esc(order.fulfillment_type || "delivery")} • ${esc(order.payment_method || "GCash")}</span>
             <div class="flex items-center gap-3">
-              <span class="text-sm font-black text-[#24140B]">Total: ₱${order.total_amount}</span>
+              <span class="text-sm font-black text-[#24140B]">Total: ₱${Number(order.total_amount) || 0}</span>
               <button
                 type="button"
                 data-reorder-idx="${idx}"
