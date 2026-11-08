@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uncle Brew | Specialty Coffee & Refreshers | Your Everyday Premium Brew</title>
+  <meta name="description" content="Uncle Brew is the Philippines' favorite everyday café offering authentic highland espresso, signature Spanish Lattes, cheesecake milk teas, and high-growth franchise opportunities.">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            coffee: {
+              50: '#FAF7F2',   // Warm milk cream canvas
+              100: '#F5ECE1',  // Light latte cream
+              200: '#E8DDCE',  // Soft foam border
+              300: '#DCC3AB',  // Roasted almond
+              400: '#C2782A',  // Golden caramel accent
+              500: '#A35B1B',  // Rich toffee
+              600: '#7E3E12',  // Cinnamon roast
+              700: '#5E2F10',  // Dark roast
+              800: '#42220D',  // Heavy mocha
+              900: '#2B160A',  // Pure espresso
+              950: '#180B05',  // Midnight roast
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS for Store Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Chart.js for Franchise ROI -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-[#FAF7F2] text-[#24140B] antialiased selection:bg-[#C2782A] selection:text-white min-h-screen flex flex-col justify-between">
+
+  <!-- TOP ANNOUNCEMENT BAR (Rich Roasted Espresso) -->
+  <aside aria-label="Announcement" class="bg-[#24140B] text-[#F5ECE1] text-xs font-semibold py-2.5 px-4 text-center flex items-center justify-between z-50 sticky top-0 shadow-sm border-b border-[#382014]">
+    <div class="hidden md:flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-[#C2782A] animate-ping"></span>
+      <span class="text-[#DCC3AB]">Cebu Flagship • Now Serving Nationwide at 150+ Locations</span>
+    </div>
+    <div class="flex-1 md:flex-initial text-center font-bold tracking-wide">
+      ☕ Everyday Special: Use code <span class="bg-[#C2782A] text-white px-2 py-0.5 rounded font-mono uppercase shadow-sm">UNCLE39</span> for ₱39 OFF!
+    </div>
+    <div class="flex items-center gap-2.5">
+      <!-- Supabase Cloud DB Status Button -->
+      <button id="supabase-status-badge" type="button" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#382014] hover:bg-[#4F2E1E] text-[#F5ECE1] border border-[#5E2F10] text-[11px] font-bold transition-all" title="Supabase Database Status">
+        <i data-lucide="database" class="w-3.5 h-3.5 text-[#C2782A]"></i>
+        <span id="supabase-status-label">Supabase: Connected</span>
+      </button>
+
+      <!-- Ambient Audio Toggle -->
+      <button id="btn-toggle-ambient-audio" type="button" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#382014] hover:bg-[#4F2E1E] text-[#F5ECE1] border border-[#5E2F10] text-[11px] font-bold transition-all" title="Toggle cozy café background sounds">
+        <i data-lucide="volume-2" class="w-3.5 h-3.5 text-[#C2782A]" id="ambient-audio-icon"></i>
+        <span id="ambient-audio-label">Café Sound: OFF</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN NAVIGATION (Airy, Frosted Café White) -->
+  <header class="sticky top-9 z-40 bg-white/95 backdrop-blur-md border-b border-[#E8DDCE] transition-all shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
+      <a href="#hero" class="flex items-center gap-3 group">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#C2782A] via-[#A35B1B] to-[#2B160A] flex items-center justify-center shadow-md shadow-[#2B160A]/15 group-hover:scale-105 transition-transform">
+          <i data-lucide="coffee" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <span class="font-serif text-2xl font-black tracking-tight text-[#24140B] flex items-center gap-1">
+            UNCLE BREW <span class="text-[#C2782A] text-sm font-sans font-extrabold">PH</span>
+          </span>
+          <span class="text-[10px] text-[#8E7A6E] block tracking-widest uppercase font-bold">Specialty Coffee & Refreshers</span>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <nav class="hidden lg:flex items-center gap-6 text-sm font-semibold text-[#4F2E1E]">
+        <a href="#menu" class="hover:text-[#C2782A] transition-colors">Menu</a>
+        <a href="#barista-lab" class="hover:text-[#C2782A] transition-colors flex items-center gap-1.5">
+          <i data-lucide="flame" class="w-3.5 h-3.5 text-[#C2782A]"></i>
+          <span>Barista Lab</span>
+        </a>
+        <a href="#mood-finder" class="hover:text-[#C2782A] transition-colors flex items-center gap-1.5">
+          <i data-lucide="compass" class="w-3.5 h-3.5 text-[#C2782A]"></i>
+          <span>Mood Matcher</span>
+        </a>
+        <a href="#brew-studio" class="hover:text-[#C2782A] transition-colors flex items-center gap-1.5">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#C2782A]"></i>
+          <span>Brew Studio</span>
+        </a>
+        <a href="#franchise" class="hover:text-[#C2782A] transition-colors flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-[#C2782A]"></span>
+          <span>Franchise & ROI</span>
+        </a>
+        <a href="#stores" class="hover:text-[#C2782A] transition-colors">Branches</a>
+        <a href="#loyalty" class="hover:text-[#C2782A] transition-colors">Rewards</a>
+      </nav>
+
+      <!-- Right Action Items -->
+      <div class="flex items-center gap-3">
+        <!-- Order Online Button -->
+        <a href="#menu" class="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs transition-all shadow-md shadow-[#24140B]/15 active:scale-95">
+          <i data-lucide="shopping-bag" class="w-4 h-4 text-[#C2782A]"></i>
+          <span>Order Online</span>
+        </a>
+
+        <!-- Cart Button -->
+        <button type="button" class="btn-open-cart relative p-2.5 rounded-xl bg-white border border-[#E8DDCE] hover:border-[#C2782A] transition-all text-[#24140B] hover:text-[#C2782A] shadow-sm" aria-label="Open Shopping Cart">
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+          <span class="cart-count-badge hidden absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#C2782A] text-white text-[11px] font-black flex items-center justify-center shadow">0</span>
+        </button>
+
+        <!-- Mobile Menu Hamburger -->
+        <button type="button" id="btn-mobile-menu" class="lg:hidden p-2.5 rounded-xl bg-white border border-[#E8DDCE] text-[#24140B]" aria-label="Toggle navigation menu">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Mobile Drawer Nav -->
+    <div id="mobile-menu-drawer" class="hidden lg:hidden border-t border-[#E8DDCE] bg-white px-6 py-4 space-y-3 text-sm shadow-lg">
+      <a href="#menu" class="block py-2 text-[#4F2E1E] hover:text-[#C2782A] font-semibold">Full Menu</a>
+      <a href="#barista-lab" class="block py-2 text-[#C2782A] font-bold flex items-center gap-2">
+        <i data-lucide="flame" class="w-4 h-4"></i> Barista Lab (Pull Espresso)
+      </a>
+      <a href="#mood-finder" class="block py-2 text-[#C2782A] font-bold flex items-center gap-2">
+        <i data-lucide="compass" class="w-4 h-4"></i> Mood Matcher (Craving Quiz)
+      </a>
+      <a href="#brew-studio" class="block py-2 text-[#C2782A] font-bold flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-4 h-4"></i> Interactive Brew Studio
+      </a>
+      <a href="#franchise" class="block py-2 text-[#4F2E1E] hover:text-[#C2782A] font-medium">Franchise & ROI Calculator</a>
+      <a href="#stores" class="block py-2 text-[#4F2E1E] hover:text-[#C2782A] font-medium">Branch Locator (150+ Stores)</a>
+      <a href="#loyalty" class="block py-2 text-[#4F2E1E] hover:text-[#C2782A] font-medium">BrewClub Stamp Rewards</a>
+      <a href="#story" class="block py-2 text-[#4F2E1E] hover:text-[#C2782A] font-medium">About Uncle Brew</a>
+    </div>
+  </header>
+
+  <!-- HERO SECTION (Generous Whitespace, Warm Cream & Roasted Espresso) -->
+  <section id="hero" class="relative overflow-hidden pt-16 pb-24 lg:pt-24 lg:pb-36 bg-gradient-to-b from-[#FAF7F2] via-[#F7F2EB] to-[#FAF7F2]">
+    <!-- Ambient Warm Coffee Lighting -->
+    <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-[#C2782A]/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="absolute top-1/2 right-10 w-[400px] h-[400px] bg-[#DCC3AB]/20 rounded-full blur-2xl pointer-events-none -z-10"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+        
+        <!-- Left Column: Copy with Breathing Room -->
+        <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+          
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8DDCE] bg-white text-[#C2782A] text-xs font-bold shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-[#C2782A] animate-pulse"></span>
+            <span>Born in Cebu • The ₱39 Everyday Coffee Revolution</span>
+          </div>
+
+          <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-black text-[#24140B] tracking-tight leading-[1.18]">
+            Crafted for Hustlers. <br>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#C2782A] via-[#A35B1B] to-[#5E2F10]">
+              Brewed for Filipinos.
+            </span>
+          </h1>
+
+          <p class="text-base sm:text-lg text-[#634F44] max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
+            From our legendary ₱39 roots in Cebu to over 150 branches nationwide. Experience slow-extracted Atok Benguet espresso, signature Spanish lattes, and velvety cheesecake refreshers without the luxury markup.
+          </p>
+
+          <!-- CTAs -->
+          <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-3">
+            <a href="#menu" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#24140B]/15 transition-all transform active:scale-95">
+              <i data-lucide="coffee" class="w-4 h-4 text-[#C2782A]"></i>
+              <span>Order Delivery / Pickup</span>
+            </a>
+            <a href="#brew-studio" class="w-full sm:w-auto px-7 py-4 rounded-xl border border-[#E8DDCE] bg-white hover:bg-[#FAF7F2] text-[#24140B] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm">
+              <i data-lucide="wand-2" class="w-4 h-4 text-[#C2782A]"></i>
+              <span>Customize in Brew Studio</span>
+            </a>
+            <a href="#franchise" class="w-full sm:w-auto px-5 py-4 rounded-xl text-[#634F44] hover:text-[#C2782A] text-sm font-bold flex items-center justify-center gap-1 transition-colors">
+              <span>Franchise Info</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+          </div>
+
+          <!-- Proof Metrics in White Cards -->
+          <div class="pt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-[#E8DDCE]">
+            <div class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm">
+              <div class="text-2xl sm:text-3xl font-black text-[#C2782A]">150+</div>
+              <div class="text-xs text-[#634F44] font-semibold mt-1">Branches Nationwide</div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm">
+              <div class="text-2xl sm:text-3xl font-black text-[#C2782A]">35K+</div>
+              <div class="text-xs text-[#634F44] font-semibold mt-1">Cups Brewed Daily</div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm">
+              <div class="text-2xl sm:text-3xl font-black text-[#C2782A]">100%</div>
+              <div class="text-xs text-[#634F44] font-semibold mt-1">Highland Benguet</div>
+            </div>
+            <div class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm">
+              <div class="text-2xl sm:text-3xl font-black text-[#C2782A]">4.9 ★</div>
+              <div class="text-xs text-[#634F44] font-semibold mt-1">45,000+ Reviews</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Visual Showcase (Crisp White Card with Warm Shadows) -->
+        <div class="lg:col-span-5 relative flex items-center justify-center">
+          
+          <div class="relative w-full max-w-md mx-auto aspect-square rounded-3xl bg-white border border-[#E8DDCE] p-8 flex flex-col items-center justify-center shadow-2xl">
+            
+            <!-- Steam Animation Wisps -->
+            <div class="absolute -top-12 z-20 flex gap-4 pointer-events-none">
+              <div class="w-4 h-16 bg-gradient-to-t from-[#C49F82]/50 to-transparent rounded-full blur-md steam-wisp"></div>
+              <div class="w-4 h-20 bg-gradient-to-t from-[#C49F82]/60 to-transparent rounded-full blur-md steam-wisp-2"></div>
+              <div class="w-3 h-14 bg-gradient-to-t from-[#C49F82]/40 to-transparent rounded-full blur-md steam-wisp-3"></div>
+            </div>
+
+            <!-- Featured Cup Image -->
+            <div class="relative z-10 w-72 h-80 rounded-2xl overflow-hidden shadow-xl border-2 border-[#E8DDCE] group">
+              <img 
+                src="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=700&q=80" 
+                alt="Uncle Brew Spanish Latte" 
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              >
+              <div class="absolute inset-0 bg-gradient-to-t from-[#1F120A]/95 via-[#1F120A]/20 to-transparent"></div>
+              <div class="absolute bottom-4 left-4 right-4">
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#C2782A] text-white uppercase tracking-wider shadow">Top Seller</span>
+                <h3 class="text-lg font-bold text-white mt-1">Uncle's Spanish Latte</h3>
+                <p class="text-xs text-[#FAF7F2]">Double shot Benguet espresso with silky sweet milk crema.</p>
+                <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/20">
+                  <span class="text-base font-extrabold text-[#F5ECE1]">₱89</span>
+                  <button onclick="window.brewApp.openCustomizerModal('ub-spanish-latte')" class="px-3 py-1 bg-[#C2782A] hover:bg-[#A35B1B] text-white text-xs font-bold rounded-lg transition-colors">Quick Add</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating Micro Badges -->
+            <div class="absolute -top-4 -left-4 px-4 py-2.5 rounded-2xl bg-white border border-[#E8DDCE] shadow-lg flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span class="text-xs font-bold text-[#24140B]">Fresh Microfoam</span>
+            </div>
+
+            <div class="absolute -bottom-4 -right-4 px-4 py-2.5 rounded-2xl bg-white border border-[#E8DDCE] shadow-lg flex items-center gap-2">
+              <i data-lucide="award" class="w-4 h-4 text-[#C2782A]"></i>
+              <span class="text-xs font-bold text-[#24140B]">100% High-Grade Arabica</span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICK POPULAR PICKS STRIP (Clean White Space Bar) -->
+  <section class="py-10 border-y border-[#E8DDCE] bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+        <div>
+          <span class="text-[#C2782A] text-xs font-extrabold uppercase tracking-wider">Crowd Favorites</span>
+          <h2 class="text-xl font-bold text-[#24140B] font-serif mt-0.5">Uncle's Top 4 Must-Tries</h2>
+        </div>
+        <a href="#menu" class="text-xs text-[#634F44] hover:text-[#C2782A] flex items-center gap-1 font-bold">
+          <span>View All 24+ Items</span>
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        
+        <div class="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E8DDCE] hover:border-[#C2782A] hover:bg-white transition-all flex items-center gap-3 cursor-pointer shadow-sm hover:shadow-md" onclick="window.brewApp.openCustomizerModal('ub-spanish-latte')">
+          <img src="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=150&q=80" alt="Spanish Latte" class="w-12 h-12 rounded-xl object-cover border border-[#E8DDCE]">
+          <div>
+            <h4 class="text-xs font-bold text-[#24140B]">Spanish Latte</h4>
+            <span class="text-xs font-extrabold text-[#C2782A]">₱89</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E8DDCE] hover:border-[#C2782A] hover:bg-white transition-all flex items-center gap-3 cursor-pointer shadow-sm hover:shadow-md" onclick="window.brewApp.openCustomizerModal('ub-frappe-javachip')">
+          <img src="https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=150&q=80" alt="Java Chip Crush" class="w-12 h-12 rounded-xl object-cover border border-[#E8DDCE]">
+          <div>
+            <h4 class="text-xs font-bold text-[#24140B]">Dark Choco Java</h4>
+            <span class="text-xs font-extrabold text-[#C2782A]">₱119</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E8DDCE] hover:border-[#C2782A] hover:bg-white transition-all flex items-center gap-3 cursor-pointer shadow-sm hover:shadow-md" onclick="window.brewApp.openCustomizerModal('ub-panda-pearl-milktea')">
+          <img src="https://images.unsplash.com/photo-1558857563-b37cf5a97576?auto=format&fit=crop&w=150&q=80" alt="Panda Pearl Milk Tea" class="w-12 h-12 rounded-xl object-cover border border-[#E8DDCE]">
+          <div>
+            <h4 class="text-xs font-bold text-[#24140B]">Panda Pearl Tea</h4>
+            <span class="text-xs font-extrabold text-[#C2782A]">₱79</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E8DDCE] hover:border-[#C2782A] hover:bg-white transition-all flex items-center gap-3 cursor-pointer shadow-sm hover:shadow-md" onclick="window.brewApp.openCustomizerModal('ub-matcha-espresso')">
+          <img src="https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=150&q=80" alt="Matcha Fusion" class="w-12 h-12 rounded-xl object-cover border border-[#E8DDCE]">
+          <div>
+            <h4 class="text-xs font-bold text-[#24140B]">Dirty Matcha</h4>
+            <span class="text-xs font-extrabold text-[#C2782A]">₱109</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- INTERACTIVE BARISTA LAB: PULL YOUR ESPRESSO SHOT -->
+  <section id="barista-lab" class="py-20 bg-white border-b border-[#E8DDCE]">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <span class="px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase bg-[#FAF7F2] text-[#C2782A] border border-[#E8DDCE] shadow-sm">
+          Hands-On Barista Lab
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-black font-serif text-[#24140B] mt-3">
+          Pull Your Own Double-Shot Espresso
+        </h2>
+        <p class="text-sm text-[#634F44] mt-2">
+          Experience the craft behind every cup. Grind high-altitude Benguet beans, tamp the coffee puck, and pull the 9-bar chrome lever to unlock a secret café voucher!
+        </p>
+        <div class="mt-3">
+          <span id="barista-status-badge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-[#FAF7F2] text-[#24140B] border border-[#E8DDCE]">
+            Step 1: Grind Fresh Highland Beans
+          </span>
+        </div>
+      </div>
+
+      <!-- Interactive Machine Box -->
+      <div class="bg-[#FAF7F2] border-2 border-[#E8DDCE] rounded-3xl p-6 sm:p-10 shadow-lg relative overflow-hidden">
+        
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          
+          <!-- Visual Extraction Stage -->
+          <div class="md:col-span-5 flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-[#E8DDCE] shadow-inner relative min-h-[300px]">
+            
+            <!-- Espresso Machine Group Head (SVG/CSS) -->
+            <div class="w-40 h-8 rounded-t-xl bg-[#24140B] border-t-2 border-[#C2782A] shadow-md flex items-center justify-center">
+              <span class="text-[9px] font-black text-[#F5ECE1] tracking-widest uppercase">UNCLE 9-BAR PULL</span>
+            </div>
+
+            <!-- Portafilter with Handle & Lever -->
+            <div class="relative w-28 h-12 bg-stone-300 rounded-b-xl border border-stone-400 flex items-center justify-center shadow-md">
+              <div class="absolute -right-16 top-3 w-16 h-4 bg-[#24140B] rounded-r-full shadow"></div>
+              <span class="text-[10px] font-extrabold text-[#24140B]">Portafilter</span>
+
+              <!-- Tamper Tool Tooltip -->
+              <div id="barista-tamper-tool" class="absolute -top-12 left-1/2 -translate-x-1/2 w-12 h-14 bg-gradient-to-b from-stone-400 to-stone-600 rounded-t-lg shadow-xl transition-all duration-300 flex items-center justify-center">
+                <span class="text-[8px] text-white font-bold">TAMPER</span>
+              </div>
+            </div>
+
+            <!-- Espresso Liquid Pouring Stream Animation -->
+            <div id="barista-espresso-stream" class="hidden w-2 h-20 bg-gradient-to-b from-[#C2782A] via-[#A35B1B] to-[#3D2214] rounded-full animate-pulse my-1 shadow-lg"></div>
+
+            <!-- Espresso Glass with Crema Growth -->
+            <div class="relative w-24 h-24 mt-2 border-2 border-[#E8DDCE] rounded-b-2xl bg-white/70 overflow-hidden flex flex-col justify-end p-1 shadow-md">
+              <div id="barista-crema-cup" class="w-full bg-gradient-to-t from-[#24140B] via-[#4A2B1E] to-[#C2782A] rounded-b-xl transition-all duration-1000 ease-out" style="height: 0%;">
+                <div class="w-full h-2 bg-[#DCC3AB] rounded-t-full opacity-90"></div>
+              </div>
+              <span class="absolute top-1 left-0 right-0 text-center text-[9px] font-bold text-[#8E7A6E]">Espresso Glass</span>
+            </div>
+
+          </div>
+
+          <!-- Interactive Action Steps -->
+          <div class="md:col-span-7 space-y-4">
+            
+            <!-- Step 1: Grind -->
+            <div id="barista-step-1-box" class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm flex items-center justify-between gap-4 transition-all">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] flex items-center justify-center font-bold text-[#24140B]">1</div>
+                <div>
+                  <h4 class="text-sm font-bold text-[#24140B]">Grind Highland Benguet Beans</h4>
+                  <p class="text-xs text-[#634F44]">18 grams freshly ground Atok single-origin Arabica.</p>
+                  <div class="w-32 bg-[#FAF7F2] h-1.5 rounded-full overflow-hidden mt-2 border border-[#E8DDCE]">
+                    <div id="barista-grind-meter" class="h-full bg-[#C2782A] w-0 transition-all duration-1000"></div>
+                  </div>
+                </div>
+              </div>
+              <button id="barista-grind-btn" type="button" class="px-4 py-2.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs shadow-sm transition-all active:scale-95 flex items-center gap-1.5">
+                <i data-lucide="cog" class="w-3.5 h-3.5 text-[#C2782A]"></i>
+                <span>Grind</span>
+              </button>
+            </div>
+
+            <!-- Step 2: Tamp -->
+            <div id="barista-step-2-box" class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm flex items-center justify-between gap-4 transition-all opacity-40">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] flex items-center justify-center font-bold text-[#24140B]">2</div>
+                <div>
+                  <h4 class="text-sm font-bold text-[#24140B]">Level & Tamp the Puck</h4>
+                  <p class="text-xs text-[#634F44]">Apply 30 lbs of calibrated tamper pressure for even extraction.</p>
+                </div>
+              </div>
+              <button id="barista-tamp-btn" disabled type="button" class="px-4 py-2.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] disabled:opacity-40 text-white font-bold text-xs shadow-sm transition-all active:scale-95 flex items-center gap-1.5">
+                <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5 text-[#C2782A]"></i>
+                <span>Tamp</span>
+              </button>
+            </div>
+
+            <!-- Step 3: Pull Lever -->
+            <div id="barista-step-3-box" class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm flex items-center justify-between gap-4 transition-all opacity-40">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] flex items-center justify-center font-bold text-[#24140B]">3</div>
+                <div>
+                  <h4 class="text-sm font-bold text-[#24140B]">Pull 9-Bar Extraction Lever</h4>
+                  <p class="text-xs text-[#634F44]">Slow 26-second pre-infusion pull with rich hazelnut crema.</p>
+                </div>
+              </div>
+              <button id="barista-pull-btn" disabled type="button" class="px-4 py-2.5 rounded-xl bg-[#C2782A] hover:bg-[#A35B1B] disabled:opacity-40 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                <span>Pull Shot</span>
+              </button>
+            </div>
+
+            <!-- Step 4: Completed & Reward Box -->
+            <div id="barista-step-4-box" class="hidden p-5 rounded-2xl bg-white border-2 border-[#C2782A] shadow-md flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
+              <div>
+                <span class="text-[10px] font-black uppercase text-[#C2782A] tracking-wider">🎉 Golden Crema Unlocked!</span>
+                <h4 class="text-sm font-bold text-[#24140B]">You earned code UNCLE39 for ₱39 OFF</h4>
+                <p class="text-xs text-[#634F44]">Ready to taste the real Benguet espresso you just pulled?</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="barista-apply-voucher-btn" type="button" class="px-4 py-2.5 rounded-xl bg-[#24140B] text-white hover:bg-[#3D2214] font-bold text-xs shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#C2782A]"></i>
+                  <span>Claim & Add to Cart</span>
+                </button>
+                <button id="barista-reset-btn" type="button" class="p-2.5 rounded-xl border border-[#E8DDCE] text-[#8E7A6E] hover:text-[#24140B]" title="Pull another shot">
+                  <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- INTERACTIVE BREW STUDIO (DRINK BUILDER) -->
+  <section id="brew-studio" class="py-24 bg-[#FAF7F2] relative border-b border-[#E8DDCE]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <span class="px-4 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-white text-[#C2782A] border border-[#E8DDCE] shadow-sm">Interactive Experience</span>
+        <h2 class="text-3xl sm:text-4xl font-black font-serif text-[#24140B] mt-3.5">The Uncle Brew Studio</h2>
+        <p class="text-sm text-[#634F44] mt-2">Design your signature cup in real-time. Choose your espresso base, milk formulation, sweetness, and artisan toppings with live preview.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        
+        <!-- Live SVG Cup Preview Column (Clean White Card) -->
+        <div class="lg:col-span-5 sticky top-28 bg-white border border-[#E8DDCE] rounded-3xl p-6 sm:p-8 flex flex-col items-center shadow-xl">
+          <div class="w-full flex items-center justify-between pb-4 border-b border-[#F2E9DE] text-xs">
+            <span class="text-[#8E7A6E] font-medium">Cup Preview</span>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="font-bold text-[#24140B]">Live Simulation</span>
+            </div>
+          </div>
+
+          <!-- Interactive SVG Drink Cup -->
+          <div class="py-8 relative w-48 sm:w-56 h-80 flex items-center justify-center">
+            
+            <svg viewBox="0 0 200 320" class="w-full h-full drop-shadow-xl overflow-visible">
+              <defs>
+                <linearGradient id="cupGlassGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+                  <stop offset="30%" stop-color="#ffffff" stop-opacity="0.2"/>
+                  <stop offset="85%" stop-color="#ffffff" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#ffffff" stop-opacity="0.7"/>
+                </linearGradient>
+                <clipPath id="cupInteriorClip">
+                  <path d="M35,60 L165,60 L150,290 C150,300 140,305 100,305 C60,305 50,300 50,290 Z" />
+                </clipPath>
+              </defs>
+
+              <!-- Cup Interior Layer Clip -->
+              <g clip-path="url(#cupInteriorClip)">
+                <!-- Base Liquid Layer -->
+                <rect id="svg-base-layer" x="20" y="60" width="160" height="250" fill="#3B1E13" />
+
+                <!-- Milk / Crema blend Layer -->
+                <rect id="svg-milk-layer" x="20" y="60" width="160" height="90" fill="#FFFDF6" opacity="0.8" />
+
+                <!-- Foam cloud wave layer -->
+                <path id="svg-foam-layer" d="M30,70 Q60,60 100,72 T170,68 L170,95 L30,95 Z" fill="#ffffff" opacity="0.95" class="hidden" />
+
+                <!-- Caramel Drizzle Wall Streaks -->
+                <g id="svg-drizzle-layer" style="display: none;" opacity="0.9">
+                  <path d="M50,70 Q60,140 55,240" stroke="#C2782A" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                  <path d="M90,65 Q85,120 92,200" stroke="#C2782A" stroke-width="5" fill="none" stroke-linecap="round"/>
+                  <path d="M140,70 Q130,160 138,260" stroke="#C2782A" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- Ice Cubes Floating -->
+                <g id="svg-ice-group">
+                  <rect x="55" y="110" width="36" height="36" rx="6" fill="#ffffff" fill-opacity="0.45" stroke="#ffffff" stroke-width="1.5" class="ice-cube-1" />
+                  <rect x="110" y="125" width="34" height="34" rx="6" fill="#ffffff" fill-opacity="0.4" stroke="#ffffff" stroke-width="1.5" class="ice-cube-2" />
+                  <rect x="75" y="165" width="32" height="32" rx="5" fill="#ffffff" fill-opacity="0.35" stroke="#ffffff" stroke-width="1.5" class="ice-cube-1" />
+                </g>
+
+                <!-- Brown Sugar Pearls / Toppings at the Bottom -->
+                <g id="svg-pearls-group">
+                  <circle cx="65" cy="285" r="9" fill="#180e08" stroke="#3b2218" stroke-width="1"/>
+                  <circle cx="82" cy="288" r="8.5" fill="#130b06" stroke="#3b2218" stroke-width="1"/>
+                  <circle cx="100" cy="286" r="9.5" fill="#1f1109" stroke="#3b2218" stroke-width="1"/>
+                  <circle cx="118" cy="289" r="8" fill="#150c07" stroke="#3b2218" stroke-width="1"/>
+                  <circle cx="135" cy="284" r="9" fill="#1b0f08" stroke="#3b2218" stroke-width="1"/>
+                  <circle cx="75" cy="272" r="8" fill="#1a0e08" stroke="#3b2218" stroke-width="1"/>
+                  <circle cx="95" cy="274" r="8.5" fill="#140c06" stroke="#3b2218" stroke-width="1"/>
+                  <circle cx="115" cy="273" r="8" fill="#180e08" stroke="#3b2218" stroke-width="1"/>
+                </g>
+              </g>
+
+              <!-- Transparent Cup Glass Outline & Highlights -->
+              <path d="M35,60 L165,60 L150,290 C150,300 140,305 100,305 C60,305 50,300 50,290 Z" fill="url(#cupGlassGrad)" stroke="#E8DDCE" stroke-width="2" />
+              <!-- Cup Rim -->
+              <ellipse cx="100" cy="60" rx="66" ry="10" fill="none" stroke="#E8DDCE" stroke-width="2.5" />
+              <ellipse cx="100" cy="60" rx="63" ry="8" fill="#ffffff" fill-opacity="0.4" />
+              
+              <!-- Uncle Brew Stamp on Glass -->
+              <circle cx="100" cy="180" r="26" fill="#24140B" fill-opacity="0.8" stroke="#C2782A" stroke-width="1.5" />
+              <text x="100" y="177" text-anchor="middle" font-family="sans-serif" font-size="7" font-weight="900" fill="#F5ECE1" letter-spacing="1">UNCLE BREW</text>
+              <text x="100" y="188" text-anchor="middle" font-family="sans-serif" font-size="5" font-weight="700" fill="#C2782A" letter-spacing="0.5">CEBU PH</text>
+            </svg>
+
+          </div>
+
+          <!-- Live Cup Stats -->
+          <div class="w-full grid grid-cols-3 gap-2 text-center py-3.5 bg-[#FAF7F2] rounded-2xl border border-[#E8DDCE]">
+            <div>
+              <span class="text-[10px] text-[#8E7A6E] uppercase tracking-wider font-bold block">Est. Cal</span>
+              <span id="studio-live-cal" class="text-xs font-bold text-[#24140B]">~220 kcal</span>
+            </div>
+            <div class="border-x border-[#E8DDCE]">
+              <span class="text-[10px] text-[#8E7A6E] uppercase tracking-wider font-bold block">Caffeine</span>
+              <span id="studio-live-caf" class="text-xs font-bold text-[#C2782A]">140mg</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-[#8E7A6E] uppercase tracking-wider font-bold block">Total Price</span>
+              <span id="studio-live-price" class="text-sm font-black text-[#24140B]">₱104</span>
+            </div>
+          </div>
+
+          <!-- Add to Cart CTA -->
+          <div class="w-full mt-4 space-y-2.5">
+            <input 
+              id="studio-drink-name" 
+              type="text" 
+              placeholder="Name your recipe (e.g., Morning Rocket)" 
+              class="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-xs text-[#24140B] focus:outline-none focus:border-[#C2782A] text-center font-medium"
+            >
+            <button 
+              id="btn-add-studio-drink" 
+              type="button" 
+              class="w-full py-3.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#24140B]/15 active:scale-95 transition-all"
+            >
+              <i data-lucide="plus-circle" class="w-4 h-4 text-[#C2782A]"></i>
+              <span>Add Custom Brew to Cart</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Customizer Controls Column (Clean White Card with Generous Whitespace) -->
+        <div class="lg:col-span-7 space-y-7 bg-white p-6 sm:p-10 rounded-3xl border border-[#E8DDCE] shadow-xl">
+          
+          <!-- Size Selector -->
+          <div>
+            <label class="text-xs font-bold text-[#24140B] uppercase tracking-wider block mb-3 flex items-center gap-1.5">
+              <span>1. Cup Size</span>
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" data-size="regular" class="studio-size-btn p-3.5 rounded-2xl border border-[#E8DDCE] bg-[#FAF7F2] text-[#24140B] text-xs font-bold flex items-center justify-between transition-all">
+                <span>Regular (16oz)</span>
+                <span class="text-[#8E7A6E]">₱79</span>
+              </button>
+              <button type="button" data-size="large" class="studio-size-btn p-3.5 rounded-2xl border border-[#24140B] bg-[#24140B] text-white text-xs font-bold flex items-center justify-between shadow-md transition-all">
+                <span>Large (22oz) - Recommended</span>
+                <span class="text-[#C2782A]">₱99</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Base Selector -->
+          <div>
+            <label class="text-xs font-bold text-[#24140B] uppercase tracking-wider block mb-3">
+              2. Choose Beverage Base
+            </label>
+            <div id="studio-bases" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Milk / Cream formulation -->
+          <div>
+            <label class="text-xs font-bold text-[#24140B] uppercase tracking-wider block mb-3">
+              3. Milk & Crema Cloud
+            </label>
+            <div id="studio-milks" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Sweetness Slider -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-bold text-[#24140B] uppercase tracking-wider">
+                4. Sweetness Level
+              </label>
+              <span id="studio-sweetness-val" class="text-xs font-extrabold text-[#C2782A]">50% Sugar</span>
+            </div>
+            <input 
+              id="studio-sweetness-range" 
+              type="range" 
+              min="0" 
+              max="100" 
+              step="25" 
+              value="50" 
+              class="w-full accent-[#C2782A] cursor-pointer"
+            >
+            <div class="flex justify-between text-[11px] text-[#634F44] font-medium px-1 mt-1.5">
+              <span>0% (Black)</span>
+              <span>25%</span>
+              <span class="text-[#C2782A] font-bold">50% (Uncle's Way)</span>
+              <span>75%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <!-- Ice Level -->
+          <div>
+            <label class="text-xs font-bold text-[#24140B] uppercase tracking-wider block mb-3">
+              5. Ice Temperature
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <button type="button" data-ice="no-ice" class="studio-ice-btn p-2.5 rounded-xl text-xs border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] hover:border-[#C2782A] font-semibold">No Ice</button>
+              <button type="button" data-ice="less-ice" class="studio-ice-btn p-2.5 rounded-xl text-xs border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] hover:border-[#C2782A] font-semibold">Less Ice</button>
+              <button type="button" data-ice="standard-ice" class="studio-ice-btn p-2.5 rounded-xl text-xs border border-[#C2782A] bg-[#FDF9F4] text-[#C2782A] font-bold">Standard (70%)</button>
+              <button type="button" data-ice="extra-ice" class="studio-ice-btn p-2.5 rounded-xl text-xs border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] hover:border-[#C2782A] font-semibold">Extra Chilled</button>
+            </div>
+          </div>
+
+          <!-- Toppings / Add-ons -->
+          <div>
+            <label class="text-xs font-bold text-[#24140B] uppercase tracking-wider block mb-3">
+              6. Artisan Toppings & Extras
+            </label>
+            <div id="studio-toppings" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- INTERACTIVE BREW MOOD QUIZ (FLAVOR MATCHER) -->
+  <section id="mood-finder" class="py-20 bg-white border-b border-[#E8DDCE]">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-10">
+        <span class="px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase bg-[#FAF7F2] text-[#C2782A] border border-[#E8DDCE] shadow-sm">
+          Flavor & Mood Matcher
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-black font-serif text-[#24140B] mt-3">
+          What Should Uncle Brew For You?
+        </h2>
+        <p class="text-sm text-[#634F44] mt-2">
+          Can't decide between 24+ drinks? Answer 3 quick craving questions and let Uncle match your perfect beverage.
+        </p>
+
+        <!-- Quiz Progress Bar -->
+        <div class="w-48 mx-auto bg-[#FAF7F2] rounded-full h-2 mt-6 overflow-hidden border border-[#E8DDCE]">
+          <div id="mood-quiz-progress" class="h-full bg-[#C2782A] rounded-full transition-all duration-500" style="width: 33%;"></div>
+        </div>
+      </div>
+
+      <!-- Quiz Card Box -->
+      <div class="bg-[#FAF7F2] border-2 border-[#E8DDCE] rounded-3xl p-6 sm:p-10 shadow-lg">
+        
+        <h3 id="mood-quiz-question" class="text-lg font-bold text-[#24140B] mb-6 text-center">
+          1. What is your current energy & craving?
+        </h3>
+
+        <!-- Interactive Question Choices Container -->
+        <div id="mood-quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Rendered by js/interactive.js -->
+        </div>
+
+        <!-- Result Box (Hidden by default, shown on step 4) -->
+        <div id="mood-quiz-result" class="hidden p-6 bg-white rounded-3xl border-2 border-[#C2782A] shadow-xl">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+            <div class="md:col-span-5 h-64 rounded-2xl overflow-hidden border border-[#E8DDCE] shadow-md bg-[#FAF7F2]">
+              <img id="quiz-match-img" src="" alt="Matched Drink" class="w-full h-full object-cover">
+            </div>
+            <div class="md:col-span-7 space-y-4">
+              <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#C2782A] text-white">
+                ✨ Your Perfect Match
+              </span>
+              <h4 id="quiz-match-name" class="text-2xl font-black font-serif text-[#24140B]">Uncle's Spanish Latte</h4>
+              <p id="quiz-match-desc" class="text-xs text-[#634F44] leading-relaxed">Double shot Benguet espresso with silky sweet milk crema.</p>
+              
+              <div class="flex items-center gap-4 py-2 border-y border-[#F2E9DE] text-xs text-[#8E7A6E]">
+                <span>🔥 <span id="quiz-match-cal" class="font-bold text-[#24140B]">220 kcal</span></span>
+                <span>⚡ <span id="quiz-match-caf" class="font-bold text-[#C2782A]">145mg caffeine</span></span>
+                <span class="text-base font-black text-[#24140B] ml-auto" id="quiz-match-price">₱89</span>
+              </div>
+
+              <div class="flex items-center gap-3 pt-2">
+                <button id="btn-order-quiz-match" type="button" class="flex-1 py-3.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md">
+                  <i data-lucide="shopping-bag" class="w-4 h-4 text-[#C2782A]"></i>
+                  <span>Order My Match Now</span>
+                </button>
+                <button id="btn-restart-quiz" type="button" class="px-4 py-3.5 rounded-xl border border-[#E8DDCE] text-[#8E7A6E] hover:text-[#24140B] font-bold text-xs">
+                  Retake
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FULL MENU SECTION (Warm Background, Crisp White Cards) -->
+  <section id="menu" class="py-24 bg-[#FAF7F2]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Section Header -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <span class="text-xs font-bold tracking-widest uppercase text-[#C2782A]">Handcrafted Every Day</span>
+          <h2 class="text-3xl sm:text-4xl font-black font-serif text-[#24140B] mt-1.5">Uncle Brew Café Menu</h2>
+          <p class="text-xs sm:text-sm text-[#634F44] mt-1.5">Brewed from authentic Philippine Benguet highlands & organic tea leaves.</p>
+        </div>
+
+        <!-- Search Bar in White Card Style -->
+        <div class="w-full md:w-80 relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8E7A6E]"></i>
+          <input 
+            id="menu-search-input" 
+            type="text" 
+            placeholder="Search Spanish Latte, Matcha, Waffles..." 
+            class="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border border-[#E8DDCE] text-xs text-[#24140B] placeholder-[#8E7A6E] focus:outline-none focus:border-[#C2782A] shadow-sm font-medium"
+          >
+        </div>
+      </div>
+
+      <!-- Category Filter Pills (Horizontal Scrollable) -->
+      <div id="menu-category-pills" class="flex items-center gap-2.5 overflow-x-auto pb-4 mb-6 scrollbar-none">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Quick Filter Tags -->
+      <div class="flex items-center gap-2.5 mb-10 text-xs">
+        <span class="text-[#8E7A6E] font-bold">Filters:</span>
+        <button type="button" data-tag="all" class="menu-filter-tag px-3.5 py-1.5 rounded-xl border border-[#24140B] text-white bg-[#24140B] font-bold shadow-sm">All</button>
+        <button type="button" data-tag="bestseller" class="menu-filter-tag px-3.5 py-1.5 rounded-xl border border-[#E8DDCE] text-[#5E2F10] bg-white hover:border-[#C2782A] shadow-sm font-semibold">🔥 Best Sellers</button>
+        <button type="button" data-tag="under99" class="menu-filter-tag px-3.5 py-1.5 rounded-xl border border-[#E8DDCE] text-[#5E2F10] bg-white hover:border-[#C2782A] shadow-sm font-semibold">⚡ Under ₱99</button>
+        <button type="button" data-tag="lowcal" class="menu-filter-tag px-3.5 py-1.5 rounded-xl border border-[#E8DDCE] text-[#5E2F10] bg-white hover:border-[#C2782A] shadow-sm font-semibold">🌱 Low Calorie (&lt;200 kcal)</button>
+      </div>
+
+      <!-- Menu Grid (Generous Whitespace, 4 columns) -->
+      <div id="menu-items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
+        <!-- Items rendered by JS -->
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FRANCHISE PORTAL & ROI CALCULATOR -->
+  <section id="franchise" class="py-24 bg-white border-t border-[#E8DDCE]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <span class="px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase bg-[#FAF7F2] text-[#C2782A] border border-[#E8DDCE] shadow-sm">
+          Business & Investment Opportunity
+        </span>
+        <h2 class="text-3xl sm:text-5xl font-black font-serif text-[#24140B] mt-4 leading-tight">
+          Own an Uncle Brew Franchise
+        </h2>
+        <p class="text-sm sm:text-base text-[#634F44] mt-3 leading-relaxed">
+          Join the fastest growing everyday coffee brand in the Philippines. Our high-margin, high-turnover model delivers proven ROI in as fast as 4 to 6 months with end-to-end supply chain support.
+        </p>
+      </div>
+
+      <!-- Franchise Package Selector Cards -->
+      <div id="franchise-package-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-14">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Interactive ROI Calculator Card (Warm Cream Canvas) -->
+      <div class="bg-[#FAF7F2] border border-[#E8DDCE] rounded-3xl p-7 sm:p-12 shadow-lg">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-[#E8DDCE]">
+          <div>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-[#C2782A]">Interactive Financial Simulator</span>
+            <h3 class="text-2xl font-bold font-serif text-[#24140B] mt-1">Project Your Store's Net Monthly Earnings</h3>
+            <p class="text-xs text-[#634F44] mt-1.5">Adjust daily cups and average spend to see real-time revenue, operational expenses, and payback period.</p>
+          </div>
+          <button 
+            type="button" 
+            id="btn-open-franchise-inquiry"
+            class="px-6 py-3.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#24140B]/15 active:scale-95 transition-all"
+          >
+            <i data-lucide="file-text" class="w-4 h-4 text-[#C2782A]"></i>
+            <span>Submit Franchise Application</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-8 items-center">
+          
+          <!-- Sliders -->
+          <div class="lg:col-span-6 space-y-7">
+            
+            <!-- Cups Slider -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-xs font-bold text-[#24140B]">Projected Daily Cups Sold</label>
+                <span id="val-daily-cups" class="text-sm font-black text-[#C2782A]">350 Cups</span>
+              </div>
+              <input id="slider-daily-cups" type="range" min="100" max="800" step="10" value="350" class="w-full accent-[#C2782A]">
+              <div class="flex justify-between text-[11px] text-[#8E7A6E] mt-1.5">
+                <span>100 cups/day</span>
+                <span>400 cups/day</span>
+                <span>800 cups/day</span>
+              </div>
+            </div>
+
+            <!-- Average Cup Price Slider -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-xs font-bold text-[#24140B]">Average Ticket Price per Order</label>
+                <span id="val-avg-price" class="text-sm font-black text-[#C2782A]">₱85</span>
+              </div>
+              <input id="slider-avg-price" type="range" min="50" max="150" step="5" value="85" class="w-full accent-[#C2782A]">
+              <div class="flex justify-between text-[11px] text-[#8E7A6E] mt-1.5">
+                <span>₱50 (Americano/Tea)</span>
+                <span>₱85 (Standard Latte)</span>
+                <span>₱150 (Coffee + Waffle Combo)</span>
+              </div>
+            </div>
+
+            <!-- Key Financial Outputs in Clean White Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-4 border-t border-[#E8DDCE]">
+              <div class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm">
+                <span class="text-[10px] text-[#8E7A6E] uppercase font-bold block">Gross Sales</span>
+                <span id="calc-gross-monthly" class="text-base font-black text-[#24140B]">₱892,500</span>
+                <span class="text-[10px] text-[#8E7A6E]">/month</span>
+              </div>
+              <div class="p-4 rounded-2xl bg-white border-2 border-[#C2782A] shadow-sm">
+                <span class="text-[10px] text-[#C2782A] uppercase font-bold block">Est. Net Profit</span>
+                <span id="calc-net-monthly" class="text-base font-black text-[#C2782A]">₱185,000</span>
+                <span class="text-[10px] text-[#8E7A6E]">/month</span>
+              </div>
+              <div class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm">
+                <span class="text-[10px] text-[#8E7A6E] uppercase font-bold block">Payback Period</span>
+                <span id="calc-payback-months" class="text-base font-black text-emerald-700">4.5 Months</span>
+                <span class="text-[10px] text-emerald-600 font-medium">Fast Turnaround</span>
+              </div>
+              <div class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm">
+                <span class="text-[10px] text-[#8E7A6E] uppercase font-bold block">Annual ROI</span>
+                <span id="calc-roi-annual" class="text-base font-black text-[#24140B]">240%</span>
+                <span class="text-[10px] text-[#8E7A6E]">Year 1</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Chart.js Doughnut Breakdown in White Card -->
+          <div class="lg:col-span-6 flex flex-col items-center justify-center p-6 bg-white rounded-3xl border border-[#E8DDCE] shadow-sm">
+            <h4 class="text-xs font-bold text-[#24140B] uppercase tracking-wider mb-2">Monthly Cash Flow Breakdown</h4>
+            <div class="relative w-full max-w-xs h-64">
+              <canvas id="franchise-roi-chart"></canvas>
+            </div>
+            <p class="text-[11px] text-[#8E7A6E] text-center mt-3">COGS includes coffee beans, milk, syrups, cups & packaging (~32%). Standard branch model.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- STORE LOCATOR SECTION (LEAFLET MAP) -->
+  <section id="stores" class="py-24 bg-[#FAF7F2] border-t border-[#E8DDCE]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-[#C2782A]">Find Uncle Brew</span>
+          <h2 class="text-3xl sm:text-4xl font-black font-serif text-[#24140B] mt-1.5">150+ Branches Across the Philippines</h2>
+          <p class="text-xs sm:text-sm text-[#634F44] mt-1.5">From our flagship in Cebu IT Park to Metro Manila, Iloilo, and Davao.</p>
+        </div>
+
+        <!-- Action / Filter Tools -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <button id="btn-find-nearest-store" type="button" class="px-4 py-2.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+            <i data-lucide="navigation" class="w-3.5 h-3.5 text-[#C2782A]"></i>
+            <span>Find Nearest to Me</span>
+          </button>
+
+          <!-- Region Filter Buttons -->
+          <div class="flex items-center gap-2 overflow-x-auto text-xs">
+            <button type="button" data-region="all" class="store-region-btn px-4 py-2 rounded-xl border border-[#24140B] bg-[#24140B] text-white font-bold shadow-sm">All Regions</button>
+            <button type="button" data-region="visayas" class="store-region-btn px-4 py-2 rounded-xl border border-[#E8DDCE] bg-white text-[#5E2F10] hover:border-[#C2782A] shadow-sm font-semibold">Visayas</button>
+            <button type="button" data-region="luzon" class="store-region-btn px-4 py-2 rounded-xl border border-[#E8DDCE] bg-white text-[#5E2F10] hover:border-[#C2782A] shadow-sm font-semibold">Luzon</button>
+            <button type="button" data-region="mindanao" class="store-region-btn px-4 py-2 rounded-xl border border-[#E8DDCE] bg-white text-[#5E2F10] hover:border-[#C2782A] shadow-sm font-semibold">Mindanao</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="geo-status-text" class="text-xs text-[#C2782A] font-bold mb-4 min-h-[18px]"></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[600px]">
+        
+        <!-- Interactive Leaflet Map -->
+        <div class="lg:col-span-7 h-80 lg:h-full rounded-3xl overflow-hidden border border-[#E8DDCE] shadow-lg relative z-10 bg-white">
+          <div id="stores-map" class="w-full h-full"></div>
+        </div>
+
+        <!-- Branch List Scroll -->
+        <div class="lg:col-span-5 h-[300px] lg:h-full overflow-y-auto space-y-3.5 pr-2 scrollbar-thin">
+          <div id="store-locator-list" class="space-y-3.5">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- DIGITAL LOYALTY CLUB ("BREWCLUB") -->
+  <section id="loyalty" class="py-24 bg-white border-t border-[#E8DDCE] relative">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF7F2] text-[#C2782A] border border-[#E8DDCE] text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
+        <i data-lucide="award" class="w-4 h-4"></i>
+        <span>Uncle's BrewClub Loyalty Program</span>
+      </div>
+
+      <h2 class="text-3xl sm:text-4xl font-black font-serif text-[#24140B]">
+        Buy 9 Cups, Get Your 10th Cup on Uncle!
+      </h2>
+      <p class="text-sm text-[#634F44] mt-2 max-w-xl mx-auto">
+        Every purchase earns a digital stamp. Collect 10 stamps to unlock a free Spanish Latte or any beverage of your choice.
+      </p>
+
+      <!-- Digital Stamp Card Box (Clean White Space with Subtle Border) -->
+      <div class="mt-10 p-7 sm:p-10 rounded-3xl bg-white border-2 border-[#E8DDCE] shadow-xl relative overflow-hidden">
+        
+        <div class="flex items-center justify-between pb-5 border-b border-[#F2E9DE] mb-7">
+          <div class="text-left">
+            <span class="text-xs text-[#8E7A6E] uppercase font-bold">Member Pass #UB-78219</span>
+            <h4 class="text-base font-bold text-[#24140B]">Juan Dela Cruz</h4>
+          </div>
+          <div class="text-right">
+            <span id="loyalty-count-display" class="text-xs font-black text-[#C2782A] bg-[#FAF7F2] px-3.5 py-1.5 rounded-full border border-[#E8DDCE] shadow-inner">
+              4 of 10 Collected
+            </span>
+          </div>
+        </div>
+
+        <!-- 10 Stamp Slots Grid -->
+        <div id="loyalty-stamps-grid" class="grid grid-cols-5 gap-3 sm:gap-4 mb-7">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- Unlocked Reward Banner -->
+        <div id="loyalty-reward-banner" class="hidden mb-6 p-4 rounded-2xl bg-[#C2782A] text-white font-bold text-sm flex items-center justify-between shadow-lg">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🎉</span>
+            <div>
+              <p class="text-xs uppercase tracking-wider text-white/80">Congratulations!</p>
+              <p class="text-sm font-black">Free Spanish Latte Unlocked!</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 bg-[#24140B] text-[#F5ECE1] rounded-lg text-xs font-mono uppercase">Voucher: FREELATTE10</span>
+        </div>
+
+        <!-- Stamp Simulation Action -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button 
+            type="button" 
+            id="btn-punch-stamp" 
+            class="px-6 py-3 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs flex items-center gap-2 shadow-md active:scale-95 transition-all"
+          >
+            <i data-lucide="stamp" class="w-4 h-4 text-[#C2782A]"></i>
+            <span>Simulate Barista Stamp Punch</span>
+          </button>
+          <span class="text-xs text-[#8E7A6E]">Click to test stamp progression and audio feedback</span>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BRAND STORY & ETHICAL HIGHLAND SOURCING -->
+  <section id="story" class="py-24 bg-[#FAF7F2] border-t border-[#E8DDCE]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+        
+        <div class="lg:col-span-6 relative">
+          <div class="relative w-full aspect-4/3 rounded-3xl overflow-hidden border border-[#E8DDCE] shadow-2xl">
+            <img 
+              src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=800&q=80" 
+              alt="Philippine Highland Coffee Beans" 
+              class="w-full h-full object-cover"
+            >
+            <div class="absolute inset-0 bg-gradient-to-t from-[#1F120A]/95 via-[#1F120A]/20 to-transparent"></div>
+            <div class="absolute bottom-6 left-6 right-6">
+              <span class="text-[#F5ECE1] text-xs font-bold uppercase tracking-wider">Ethical Sourcing</span>
+              <h4 class="text-xl font-bold text-white">Direct from Atok, Benguet & Bukidnon</h4>
+              <p class="text-xs text-[#E8DDCE] mt-1">We partner directly with high-elevation Filipino farm cooperatives, guaranteeing fair pricing and sustainable harvests.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 space-y-6">
+          <span class="text-xs font-extrabold uppercase tracking-widest text-[#C2782A]">Our Heritage</span>
+          <h2 class="text-3xl sm:text-4xl font-black font-serif text-[#24140B]">
+            From a Small Cebu Stall to a Nationwide Family
+          </h2>
+          <p class="text-sm text-[#634F44] leading-relaxed">
+            In 2020, Uncle Brew was born out of a simple, rebellious belief: <em class="text-[#24140B] font-semibold">Every Filipino deserves specialty-grade espresso without paying ₱200 a cup.</em>
+          </p>
+          <p class="text-sm text-[#634F44] leading-relaxed">
+            While foreign mega-chains treated coffee as a luxury status symbol, we partnered directly with mountain farmers in Northern Luzon and Bukidnon. By cutting middleman markups and investing in Italian commercial extraction gear, we crafted cups that taste rich, creamy, and authentic.
+          </p>
+
+          <div class="grid grid-cols-2 gap-4 pt-4 border-t border-[#E8DDCE]">
+            <div class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm">
+              <h4 class="text-sm font-bold text-[#24140B]">No Artificial Fillers</h4>
+              <p class="text-xs text-[#634F44] mt-1">Real whole milk, dairy crema, and pure espresso extractions.</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-white border border-[#E8DDCE] shadow-sm">
+              <h4 class="text-sm font-bold text-[#24140B]">Filipino Farmer First</h4>
+              <p class="text-xs text-[#634F44] mt-1">100% ethically sourced highland Arabica & Robusta beans.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CUSTOMER REVIEWS (Clean White Cards) -->
+  <section class="py-20 bg-white border-t border-[#E8DDCE]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-xl mx-auto mb-14">
+        <span class="text-xs font-extrabold uppercase tracking-widest text-[#C2782A]">Real Customer Love</span>
+        <h2 class="text-2xl sm:text-3xl font-black font-serif text-[#24140B] mt-1.5">Over 45,000 Happy Drinkers</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        
+        <div class="p-7 rounded-3xl bg-[#FAF7F2] border border-[#E8DDCE] flex flex-col justify-between shadow-sm hover:shadow-md transition-all">
+          <div>
+            <div class="flex items-center gap-1 text-[#C2782A] mb-3.5">
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+            </div>
+            <p class="text-xs sm:text-sm text-[#634F44] italic leading-relaxed">
+              "Uncle's Spanish Latte at ₱89 tastes way richer than other chains charging ₱190+. It's literally my daily gasoline before my BPO shift in IT Park!"
+            </p>
+          </div>
+          <div class="flex items-center gap-3 mt-5 pt-4 border-t border-[#E8DDCE]">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Bea" class="w-10 h-10 rounded-full object-cover border border-[#E8DDCE]">
+            <div>
+              <h5 class="text-xs font-bold text-[#24140B]">Bea Alonzo T.</h5>
+              <span class="text-[10px] text-[#8E7A6E]">Regular • Cebu IT Park Flagship</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-7 rounded-3xl bg-[#FAF7F2] border border-[#E8DDCE] flex flex-col justify-between shadow-sm hover:shadow-md transition-all">
+          <div>
+            <div class="flex items-center gap-1 text-[#C2782A] mb-3.5">
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+            </div>
+            <p class="text-xs sm:text-sm text-[#634F44] italic leading-relaxed">
+              "Achieved full ROI on my Uncle Brew branch in just 4.5 months! The barista training and bean supply chain from HQ is top-notch."
+            </p>
+          </div>
+          <div class="flex items-center gap-3 mt-5 pt-4 border-t border-[#E8DDCE]">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Mark" class="w-10 h-10 rounded-full object-cover border border-[#E8DDCE]">
+            <div>
+              <h5 class="text-xs font-bold text-[#24140B]">Mark Kenneth R.</h5>
+              <span class="text-[10px] text-[#8E7A6E]">Franchise Partner • Mandaue Branch</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-7 rounded-3xl bg-[#FAF7F2] border border-[#E8DDCE] flex flex-col justify-between shadow-sm hover:shadow-md transition-all">
+          <div>
+            <div class="flex items-center gap-1 text-[#C2782A] mb-3.5">
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-[#C2782A]"></i>
+            </div>
+            <p class="text-xs sm:text-sm text-[#634F44] italic leading-relaxed">
+              "The Dirty Matcha with Belgian Waffle is the best combo for college study grind! Fast pickup and super friendly baristas."
+            </p>
+          </div>
+          <div class="flex items-center gap-3 mt-5 pt-4 border-t border-[#E8DDCE]">
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Sophia" class="w-10 h-10 rounded-full object-cover border border-[#E8DDCE]">
+            <div>
+              <h5 class="text-xs font-bold text-[#24140B]">Sophia Anne V.</h5>
+              <span class="text-[10px] text-[#8E7A6E]">Student • UST Manila</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER (Rich Deep Espresso Finish) -->
+  <footer class="bg-[#24140B] text-[#DCC3AB] border-t border-[#382014] py-16 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-12 border-b border-[#382014]">
+        
+        <div class="lg:col-span-2 space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[#C2782A] text-white flex items-center justify-center font-black shadow-md">
+              ☕
+            </div>
+            <div>
+              <span class="font-serif text-xl font-black text-white">UNCLE BREW</span>
+              <span class="text-[10px] text-[#DCC3AB] block tracking-widest uppercase">Specialty Coffee & Refreshers</span>
+            </div>
+          </div>
+          <p class="text-xs text-[#DCC3AB]/80 max-w-sm leading-relaxed">
+            Your everyday premium brew. Handcrafted with passion, brewed from authentic Philippine highlands, and made accessible for everyone.
+          </p>
+          <div class="flex items-center gap-3 text-[#DCC3AB]">
+            <a href="#" class="w-8 h-8 rounded-lg bg-[#382014] border border-[#5E2F10] hover:border-[#C2782A] hover:text-white flex items-center justify-center transition-all"><i data-lucide="facebook" class="w-4 h-4"></i></a>
+            <a href="#" class="w-8 h-8 rounded-lg bg-[#382014] border border-[#5E2F10] hover:border-[#C2782A] hover:text-white flex items-center justify-center transition-all"><i data-lucide="instagram" class="w-4 h-4"></i></a>
+            <a href="#" class="w-8 h-8 rounded-lg bg-[#382014] border border-[#5E2F10] hover:border-[#C2782A] hover:text-white flex items-center justify-center transition-all"><i data-lucide="video" class="w-4 h-4"></i></a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3.5">Quick Navigation</h4>
+          <ul class="space-y-2.5">
+            <li><a href="#menu" class="hover:text-[#C2782A] transition-colors">Café Menu</a></li>
+            <li><a href="#brew-studio" class="hover:text-[#C2782A] transition-colors">Brew Studio Builder</a></li>
+            <li><a href="#stores" class="hover:text-[#C2782A] transition-colors">Store Locator</a></li>
+            <li><a href="#loyalty" class="hover:text-[#C2782A] transition-colors">BrewClub Stamp Card</a></li>
+            <li><a href="#story" class="hover:text-[#C2782A] transition-colors">Our Story & Beans</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3.5">Franchise & Business</h4>
+          <ul class="space-y-2.5">
+            <li><a href="#franchise" class="hover:text-[#C2782A] transition-colors">Franchise Packages</a></li>
+            <li><a href="#franchise" class="hover:text-[#C2782A] transition-colors">ROI Calculator</a></li>
+            <li><a href="#franchise" class="hover:text-[#C2782A] transition-colors">Kiosk Express Setup</a></li>
+            <li><a href="#franchise" class="hover:text-[#C2782A] transition-colors">Prime Lounge Setup</a></li>
+            <li><a href="mailto:franchise@unclebrewph.com" class="text-[#C2782A] hover:underline">franchise@unclebrewph.com</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3.5">Headquarters</h4>
+          <p class="text-xs leading-relaxed text-[#DCC3AB]/80">
+            Uncle Brew HQ<br>
+            Garden Bloc, Cebu IT Park,<br>
+            Lahug, Cebu City, 6000<br>
+            Philippines
+          </p>
+          <p class="mt-2 text-xs font-bold text-[#C2782A]">Hotline: +63 (032) 412-BREW</p>
+        </div>
+
+      </div>
+
+      <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#DCC3AB]/60">
+        <div>
+          &copy; 2026 Uncle Brew Philippines Inc. All rights reserved. Crafted with care.
+        </div>
+        <div class="flex gap-4">
+          <a href="#" class="hover:text-[#FAF7F2]">Privacy Policy</a>
+          <a href="#" class="hover:text-[#FAF7F2]">Terms of Service</a>
+          <a href="#" class="hover:text-[#FAF7F2]">Franchise Disclosure</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SLIDE-OVER CART DRAWER (Clean White Space & Coffee Accents) -->
+  <div id="cart-overlay" class="hidden fixed inset-0 bg-[#24140B]/60 backdrop-blur-sm z-50 transition-opacity"></div>
+  
+  <div id="cart-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white border-l border-[#E8DDCE] z-50 transform translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
+    
+    <!-- Drawer Header -->
+    <div class="p-5 border-b border-[#E8DDCE] flex items-center justify-between bg-[#FAF7F2]">
+      <div class="flex items-center gap-2">
+        <i data-lucide="shopping-bag" class="w-5 h-5 text-[#C2782A]"></i>
+        <h3 class="text-base font-bold text-[#24140B]">Your Brew Cart</h3>
+      </div>
+      <button class="btn-close-cart text-[#8E7A6E] hover:text-[#24140B] p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Empty State -->
+    <div id="cart-empty-state" class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+      <div class="w-16 h-16 rounded-2xl bg-[#FAF7F2] border border-[#E8DDCE] flex items-center justify-center text-[#8E7A6E] mb-3">
+        <i data-lucide="coffee" class="w-8 h-8 text-[#C49F82]"></i>
+      </div>
+      <h4 class="text-sm font-bold text-[#24140B]">Your cart is empty</h4>
+      <p class="text-xs text-[#634F44] mt-1 max-w-xs">Explore our specialty menu or customize your own drink in the Brew Studio!</p>
+      <button class="btn-close-cart mt-4 px-4 py-2 rounded-xl bg-[#24140B] text-white font-bold text-xs shadow-sm">
+        Browse Menu
+      </button>
+    </div>
+
+    <!-- Items List -->
+    <div id="cart-items-list" class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAF7F2]">
+      <!-- Injected by JS -->
+    </div>
+
+    <!-- Drawer Footer -->
+    <div id="cart-footer" class="hidden p-5 border-t border-[#E8DDCE] bg-white space-y-4">
+      
+      <!-- Voucher Box -->
+      <div>
+        <div class="flex gap-2">
+          <input 
+            id="cart-voucher-input" 
+            type="text" 
+            placeholder="Promo code (e.g., UNCLE39)" 
+            class="flex-1 px-3 py-2.5 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-xs text-[#24140B] uppercase focus:outline-none focus:border-[#C2782A] font-semibold"
+          >
+          <button 
+            type="button" 
+            id="btn-apply-voucher" 
+            class="px-4 py-2.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs"
+          >
+            Apply
+          </button>
+        </div>
+        <div id="cart-voucher-message"></div>
+      </div>
+
+      <!-- Price Breakdown -->
+      <div class="space-y-1.5 text-xs text-[#634F44]">
+        <div class="flex justify-between">
+          <span>Subtotal</span>
+          <span id="cart-subtotal" class="font-bold text-[#24140B]">₱0</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Estimated Delivery Fee</span>
+          <span id="cart-delivery-fee" class="font-bold text-[#24140B]">₱49</span>
+        </div>
+        <div id="cart-discount-row" class="hidden flex justify-between text-emerald-700 font-bold">
+          <span>Voucher Discount</span>
+          <span id="cart-discount">-₱0</span>
+        </div>
+        <div class="flex justify-between text-sm font-bold text-[#24140B] pt-2 border-t border-[#E8DDCE]">
+          <span>Total</span>
+          <span id="cart-grand-total" class="text-[#C2782A] font-black text-lg">₱0</span>
+        </div>
+      </div>
+
+      <!-- Checkout Button -->
+      <button 
+        type="button" 
+        id="btn-cart-checkout" 
+        class="w-full py-3.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#24140B]/15 active:scale-95 transition-all"
+      >
+        <span>Proceed to Checkout</span>
+        <i data-lucide="arrow-right" class="w-4 h-4 text-[#C2782A]"></i>
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- ITEM DETAIL & CUSTOMIZATION MODAL (Clean White Space) -->
+  <div id="item-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#24140B]/60 backdrop-blur-sm">
+    <div class="bg-white border border-[#E8DDCE] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      
+      <!-- Modal Header Image -->
+      <div class="relative h-48 w-full bg-[#FAF7F2] flex-shrink-0">
+        <img id="modal-item-img" src="" alt="Drink" class="w-full h-full object-cover">
+        <button id="btn-close-item-modal" type="button" class="absolute top-3 right-3 p-2 rounded-full bg-white/80 text-[#24140B] hover:bg-white backdrop-blur-md shadow">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+        <span id="modal-item-badge" class="absolute bottom-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold bg-[#C2782A] text-white uppercase tracking-wider shadow">
+          Signature Brew
+        </span>
+      </div>
+
+      <!-- Modal Content Scrollable -->
+      <div class="p-6 overflow-y-auto space-y-5 flex-1">
+        <div>
+          <h3 id="modal-item-title" class="text-xl font-bold text-[#24140B]">Drink Title</h3>
+          <p id="modal-item-desc" class="text-xs text-[#634F44] mt-1 leading-relaxed">Drink description</p>
+          <div class="flex items-center gap-4 mt-2 text-xs text-[#8E7A6E]">
+            <span>🔥 <span id="modal-item-cal">220 kcal</span></span>
+            <span>⚡ <span id="modal-item-caf">140mg caffeine</span></span>
+          </div>
+        </div>
+
+        <!-- Size -->
+        <div>
+          <label class="text-xs font-bold text-[#24140B] block mb-2">Cup Size</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="p-3 rounded-xl border border-[#E8DDCE] bg-[#FAF7F2] flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-2">
+                <input type="radio" name="modal-item-size" value="regular" checked class="text-[#C2782A] focus:ring-0">
+                <span class="text-xs font-bold text-[#24140B]">Regular (16oz)</span>
+              </div>
+            </label>
+            <label class="p-3 rounded-xl border border-[#E8DDCE] bg-[#FAF7F2] flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-2">
+                <input type="radio" name="modal-item-size" value="large" class="text-[#C2782A] focus:ring-0">
+                <span class="text-xs font-bold text-[#24140B]">Large (22oz) +₱30</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Sweetness -->
+        <div>
+          <label class="text-xs font-bold text-[#24140B] block mb-2">Sugar Level</label>
+          <div class="grid grid-cols-4 gap-2 text-xs">
+            <label class="p-2 text-center rounded-lg border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] cursor-pointer">
+              <input type="radio" name="modal-sweetness" value="0%" class="sr-only">
+              <span>0%</span>
+            </label>
+            <label class="p-2 text-center rounded-lg border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] cursor-pointer">
+              <input type="radio" name="modal-sweetness" value="25%" class="sr-only">
+              <span>25%</span>
+            </label>
+            <label class="p-2 text-center rounded-lg border border-[#C2782A] bg-[#FDF9F4] text-[#C2782A] font-bold cursor-pointer">
+              <input type="radio" name="modal-sweetness" value="50%" checked class="sr-only">
+              <span>50%</span>
+            </label>
+            <label class="p-2 text-center rounded-lg border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] cursor-pointer">
+              <input type="radio" name="modal-sweetness" value="100%" class="sr-only">
+              <span>100%</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Ice Level -->
+        <div>
+          <label class="text-xs font-bold text-[#24140B] block mb-2">Ice Level</label>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <label class="p-2 text-center rounded-lg border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] cursor-pointer">
+              <input type="radio" name="modal-ice" value="No Ice" class="sr-only">
+              <span>No Ice</span>
+            </label>
+            <label class="p-2 text-center rounded-lg border border-[#C2782A] bg-[#FDF9F4] text-[#C2782A] font-bold cursor-pointer">
+              <input type="radio" name="modal-ice" value="Standard Ice" checked class="sr-only">
+              <span>Standard</span>
+            </label>
+            <label class="p-2 text-center rounded-lg border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] cursor-pointer">
+              <input type="radio" name="modal-ice" value="Extra Ice" class="sr-only">
+              <span>Extra Cold</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Add-ons -->
+        <div>
+          <label class="text-xs font-bold text-[#24140B] block mb-2">Add-ons</label>
+          <div class="space-y-2">
+            <label class="flex items-center justify-between p-2.5 rounded-xl border border-[#E8DDCE] bg-[#FAF7F2] text-xs text-[#24140B] cursor-pointer">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" value="Brown Sugar Pearls" data-price="15" class="modal-addon-chk rounded text-[#C2782A]">
+                <span>Brown Sugar Boba</span>
+              </div>
+              <span class="text-[#C2782A] font-bold">+₱15</span>
+            </label>
+            <label class="flex items-center justify-between p-2.5 rounded-xl border border-[#E8DDCE] bg-[#FAF7F2] text-xs text-[#24140B] cursor-pointer">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" value="Cream Cheese Foam" data-price="25" class="modal-addon-chk rounded text-[#C2782A]">
+                <span>Savory Cream Cheese Foam</span>
+              </div>
+              <span class="text-[#C2782A] font-bold">+₱25</span>
+            </label>
+            <label class="flex items-center justify-between p-2.5 rounded-xl border border-[#E8DDCE] bg-[#FAF7F2] text-xs text-[#24140B] cursor-pointer">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" value="Extra Espresso Shot" data-price="20" class="modal-addon-chk rounded text-[#C2782A]">
+                <span>Double Espresso Shot Boost</span>
+              </div>
+              <span class="text-[#C2782A] font-bold">+₱20</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-5 border-t border-[#E8DDCE] bg-[#FAF7F2] flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-[#8E7A6E] uppercase font-bold tracking-wider block">Price</span>
+          <span id="modal-total-price" class="text-xl font-black text-[#C2782A]">₱89</span>
+        </div>
+        <button 
+          type="button" 
+          id="btn-confirm-modal-add" 
+          class="px-6 py-3 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs flex items-center gap-2 shadow-md active:scale-95 transition-all"
+        >
+          <i data-lucide="plus" class="w-4 h-4 text-[#C2782A]"></i>
+          <span>Add to Order</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CHECKOUT MODAL (Clean White Card) -->
+  <div id="checkout-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#24140B]/60 backdrop-blur-sm">
+    <div class="bg-white border border-[#E8DDCE] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      
+      <div class="p-5 border-b border-[#E8DDCE] flex items-center justify-between bg-[#FAF7F2]">
+        <div>
+          <h3 class="text-base font-bold text-[#24140B]">Uncle Brew Express Checkout</h3>
+          <p class="text-xs text-[#634F44]">Select delivery details & payment method</p>
+        </div>
+        <button id="btn-close-checkout" type="button" class="p-1 text-[#8E7A6E] hover:text-[#24140B]">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="checkout-form" class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+        
+        <!-- Fulfillment Mode -->
+        <div>
+          <label class="font-bold text-[#24140B] block mb-2">Order Fulfillment</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="p-2.5 rounded-xl border border-[#C2782A] bg-[#FDF9F4] text-[#C2782A] font-bold text-center cursor-pointer">
+              <input type="radio" name="order-fulfillment" value="delivery" checked class="sr-only">
+              <span>🛵 Delivery</span>
+            </label>
+            <label class="p-2.5 rounded-xl border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] text-center cursor-pointer font-semibold">
+              <input type="radio" name="order-fulfillment" value="pickup" class="sr-only">
+              <span>🏪 Pickup</span>
+            </label>
+            <label class="p-2.5 rounded-xl border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] text-center cursor-pointer font-semibold">
+              <input type="radio" name="order-fulfillment" value="dinein" class="sr-only">
+              <span>☕ Dine-In</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[#634F44] mb-1 font-semibold">Full Name</label>
+            <input id="checkout-name" type="text" required placeholder="Juan Dela Cruz" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B] focus:outline-none focus:border-[#C2782A]">
+          </div>
+          <div>
+            <label class="block text-[#634F44] mb-1 font-semibold">Mobile (GCash linked)</label>
+            <input id="checkout-phone" type="tel" required placeholder="0917 123 4567" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B] focus:outline-none focus:border-[#C2782A]">
+          </div>
+        </div>
+
+        <!-- Address -->
+        <div>
+          <label class="block text-[#634F44] mb-1 font-semibold">Delivery Address / Landmark</label>
+          <input id="checkout-address" type="text" required placeholder="Unit 402, IT Park Tower 1, Cebu City" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B] focus:outline-none focus:border-[#C2782A]">
+        </div>
+
+        <!-- Store Branch Selector -->
+        <div>
+          <label class="block text-[#634F44] mb-1 font-semibold">Brewing Branch</label>
+          <select id="checkout-branch" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B] focus:outline-none focus:border-[#C2782A] font-medium">
+            <option>Uncle Brew Prime - Cebu IT Park (Flagship)</option>
+            <option>Uncle Brew - Mango Square Fuente</option>
+            <option>Uncle Brew Prime - BGC High Street Manila</option>
+            <option>Uncle Brew - Tomas Morato QC</option>
+            <option>Uncle Brew - UST España Campus</option>
+            <option>Uncle Brew - Iloilo Business Park</option>
+            <option>Uncle Brew - Davao Abreeza</option>
+          </select>
+        </div>
+
+        <!-- Payment Method -->
+        <div>
+          <label class="font-bold text-[#24140B] block mb-2">Payment Method</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <label class="p-2.5 rounded-xl border border-blue-500/80 bg-blue-50 text-blue-700 font-bold text-center cursor-pointer flex flex-col items-center gap-1">
+              <input type="radio" name="payment-method" value="gcash" checked class="sr-only">
+              <span>GCash</span>
+            </label>
+            <label class="p-2.5 rounded-xl border border-emerald-500/80 bg-emerald-50 text-emerald-700 font-bold text-center cursor-pointer flex flex-col items-center gap-1">
+              <input type="radio" name="payment-method" value="maya" class="sr-only">
+              <span>Maya</span>
+            </label>
+            <label class="p-2.5 rounded-xl border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] font-medium text-center cursor-pointer flex flex-col items-center gap-1">
+              <input type="radio" name="payment-method" value="card" class="sr-only">
+              <span>Card</span>
+            </label>
+            <label class="p-2.5 rounded-xl border border-[#E8DDCE] bg-[#FAF7F2] text-[#634F44] font-medium text-center cursor-pointer flex flex-col items-center gap-1">
+              <input type="radio" name="payment-method" value="cod" class="sr-only">
+              <span>Cash</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="pt-4 border-t border-[#E8DDCE] flex items-center justify-between">
+          <div>
+            <span class="text-[#8E7A6E] block text-[10px] uppercase font-bold">Amount Due</span>
+            <span id="checkout-summary-total" class="text-xl font-black text-[#C2782A]">₱0</span>
+          </div>
+          <button 
+            type="submit" 
+            class="px-6 py-3.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-[#24140B]/15 active:scale-95 transition-all"
+          >
+            <span>Confirm & Place Order</span>
+            <i data-lucide="check" class="w-4 h-4 text-[#C2782A]"></i>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- LIVE ORDER TRACKER MODAL -->
+  <div id="order-tracking-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#24140B]/60 backdrop-blur-md">
+    <div class="bg-white border-2 border-[#C2782A] rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+      
+      <button id="btn-close-tracking" class="absolute top-4 right-4 text-[#8E7A6E] hover:text-[#24140B] p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-full bg-[#24140B] text-white flex items-center justify-center mx-auto mb-3 shadow-lg">
+          <i data-lucide="coffee" class="w-7 h-7 text-[#C2782A]"></i>
+        </div>
+        <span class="text-xs font-mono font-bold text-[#C2782A] uppercase tracking-wider" id="tracking-order-id">UB-948123</span>
+        <h3 class="text-xl font-black font-serif text-[#24140B] mt-1">Order Received!</h3>
+        <p class="text-xs text-[#634F44] mt-1">Estimated delivery: <span class="text-[#C2782A] font-bold">25 - 35 mins</span></p>
+      </div>
+
+      <!-- Live Progress Bar -->
+      <div class="w-full bg-[#FAF7F2] rounded-full h-2.5 mb-6 overflow-hidden border border-[#E8DDCE]">
+        <div id="tracking-progress-fill" class="bg-gradient-to-r from-[#C2782A] to-[#A35B1B] h-full rounded-full transition-all duration-700" style="width: 25%;"></div>
+      </div>
+
+      <!-- Steps Flow -->
+      <div class="space-y-4 text-xs">
+        
+        <div class="flex items-center gap-3">
+          <div id="tracking-step-icon-1" class="w-8 h-8 rounded-full border border-[#24140B] bg-[#24140B] text-white flex items-center justify-center font-bold">1</div>
+          <div>
+            <h5 class="font-bold text-[#24140B]">Order Confirmed</h5>
+            <p class="text-[11px] text-[#8E7A6E]">Transmitted to Cebu IT Park store POS</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div id="tracking-step-icon-2" class="w-8 h-8 rounded-full border border-[#E8DDCE] bg-[#FAF7F2] text-[#8E7A6E] flex items-center justify-center">2</div>
+          <div>
+            <h5 class="font-bold text-[#24140B]">Barista Brewing</h5>
+            <p class="text-[11px] text-[#8E7A6E]">Grinding Atok Benguet beans & pulling shots</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div id="tracking-step-icon-3" class="w-8 h-8 rounded-full border border-[#E8DDCE] bg-[#FAF7F2] text-[#8E7A6E] flex items-center justify-center">3</div>
+          <div>
+            <h5 class="font-bold text-[#24140B]">Thermal Sealed & Packed</h5>
+            <p class="text-[11px] text-[#8E7A6E]">Spill-proof cup cover applied</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div id="tracking-step-icon-4" class="w-8 h-8 rounded-full border border-[#E8DDCE] bg-[#FAF7F2] text-[#8E7A6E] flex items-center justify-center">4</div>
+          <div>
+            <h5 class="font-bold text-[#24140B]">Out for Delivery</h5>
+            <p class="text-[11px] text-[#8E7A6E]">Rider Kuya Jobert en route to you</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-8 pt-4 border-t border-[#E8DDCE] flex items-center justify-between text-xs text-[#634F44]">
+        <span>Status: <strong id="tracking-current-status" class="text-[#C2782A]">Order Received</strong></span>
+        <button onclick="document.getElementById('order-tracking-modal').classList.add('hidden')" class="px-4 py-2 bg-[#24140B] text-white hover:bg-[#3D2214] rounded-xl font-bold">Done</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FRANCHISE INQUIRY MODAL -->
+  <div id="franchise-inquiry-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#24140B]/60 backdrop-blur-sm">
+    <div class="bg-white border border-[#E8DDCE] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      
+      <div class="p-5 border-b border-[#E8DDCE] flex items-center justify-between bg-[#FAF7F2]">
+        <div>
+          <h3 class="text-base font-bold text-[#24140B]">Franchise Application Form</h3>
+          <p class="text-xs text-[#634F44]">Official Turnkey Partner Portal • 2026 Batch</p>
+        </div>
+        <button id="btn-close-franchise-modal" class="p-1 text-[#8E7A6E] hover:text-[#24140B]">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="franchise-inquiry-form" class="p-6 overflow-y-auto space-y-4 text-xs flex-1">
+        <div>
+          <label class="block text-[#634F44] mb-1 font-semibold">Preferred Store Package</label>
+          <select id="franchise-package-select" class="w-full px-3 py-2.5 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B] font-medium">
+            <option>Standard Café Branch (₱550,000 Turnkey) - Most Popular</option>
+            <option>Kiosk Express Stall (₱350,000 Turnkey)</option>
+            <option>Uncle Brew Prime Flagship Lounge (₱850,000 Turnkey)</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[#634F44] mb-1 font-semibold">Full Legal Name</label>
+            <input id="franchise-name" type="text" required placeholder="First & Last Name" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B]">
+          </div>
+          <div>
+            <label class="block text-[#634F44] mb-1 font-semibold">Mobile Contact</label>
+            <input id="franchise-mobile" type="tel" required placeholder="+63 9XX XXX XXXX" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B]">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[#634F44] mb-1 font-semibold">Email Address</label>
+          <input id="franchise-email" type="email" required placeholder="investor@example.com" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B]">
+        </div>
+
+        <div>
+          <label class="block text-[#634F44] mb-1 font-semibold">Target Location / City for Branch</label>
+          <input id="franchise-city" type="text" required placeholder="e.g. Mandaue City, Cebu or BGC Taguig" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B]">
+        </div>
+
+        <div>
+          <label class="block text-[#634F44] mb-1 font-semibold">Do you currently have a target leased commercial space?</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="p-2.5 border border-[#E8DDCE] rounded-xl flex items-center gap-2 cursor-pointer bg-[#FAF7F2]">
+              <input type="radio" name="has-space" value="yes" class="text-[#C2782A]">
+              <span class="font-medium text-[#24140B]">Yes, ready to lease</span>
+            </label>
+            <label class="p-2.5 border border-[#E8DDCE] rounded-xl flex items-center gap-2 cursor-pointer bg-[#FAF7F2]">
+              <input type="radio" name="has-space" value="no" checked class="text-[#C2782A]">
+              <span class="font-medium text-[#24140B]">Need Uncle Brew site vetting</span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md">
+          <span>Submit Franchise Prospectus Request</span>
+          <i data-lucide="send" class="w-4 h-4 text-[#C2782A]"></i>
+        </button>
+      </form>
+
+      <div id="franchise-inquiry-success" class="hidden p-8 text-center space-y-3">
+        <div class="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto text-xl font-bold">✓</div>
+        <h4 class="text-base font-bold text-[#24140B]">Application Received!</h4>
+        <p class="text-xs text-[#634F44]">Our Franchise Development Director will contact you within 24 hours with the detailed 2026 Turnkey Prospectus and financial dossier.</p>
+        <button onclick="document.getElementById('franchise-inquiry-modal').classList.add('hidden')" class="px-6 py-2 rounded-xl bg-[#24140B] text-white font-bold text-xs mt-2">Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SUPABASE CONFIGURATION MODAL -->
+  <div id="supabase-config-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#24140B]/60 backdrop-blur-sm">
+    <div class="bg-white border border-[#E8DDCE] rounded-3xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-5 border-b border-[#E8DDCE] flex items-center justify-between bg-[#FAF7F2]">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center justify-center">
+            <i data-lucide="database" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-[#24140B]">Supabase Cloud Database</h3>
+            <p class="text-[11px] text-[#634F44]">Real-time orders & franchise backend</p>
+          </div>
+        </div>
+        <button id="btn-close-supabase-modal" type="button" class="p-1 text-[#8E7A6E] hover:text-[#24140B]">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block text-[#24140B] font-semibold mb-1">Your Supabase Publishable Key</label>
+          <input type="text" readonly value="sb_publishable_0cjPv3TRGj6S1RspcrAw8Q_lEWzwYKE" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#C2782A] font-mono text-[11px] select-all cursor-not-allowed">
+          <span class="text-[10px] text-[#8E7A6E] mt-0.5 block">Configured automatically from your project</span>
+        </div>
+
+        <div>
+          <label class="block text-[#24140B] font-semibold mb-1">Supabase Project URL</label>
+          <input id="input-supabase-url" type="url" value="https://ffrzekxmkaslpgudqemj.supabase.co" placeholder="https://your-project-id.supabase.co" class="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] text-[#24140B] font-mono text-[11px] focus:outline-none focus:border-[#C2782A]">
+          <span class="text-[10px] text-[#8E7A6E] mt-0.5 block">Configured for your project: <strong>ffrzekxmkaslpgudqemj</strong></span>
+        </div>
+
+        <div id="supabase-modal-msg" class="hidden p-3 rounded-xl text-[11px]"></div>
+
+        <div class="pt-2 flex gap-2">
+          <button id="btn-save-supabase-url" type="button" class="flex-1 py-2.5 rounded-xl bg-[#24140B] hover:bg-[#3D2214] text-white font-bold text-xs transition-all shadow">
+            Save & Connect
+          </button>
+          <button id="btn-test-supabase-ping" type="button" class="px-4 py-2.5 rounded-xl bg-[#FAF7F2] border border-[#E8DDCE] hover:bg-[#F2E9DE] text-[#24140B] font-semibold text-xs transition-all">
+            Test Ping
+          </button>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-[#FAF7F2] border border-[#E8DDCE] text-[11px] text-[#634F44] space-y-1">
+          <span class="text-[#24140B] font-bold flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5 text-[#C2782A]"></i> Database Schema:</span>
+          <p>We created a <code class="text-[#C2782A] font-bold">supabase-schema.sql</code> file in your project folder with all required tables (<code class="text-[#24140B]">orders</code>, <code class="text-[#24140B]">franchise_inquiries</code>) and policies.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/brew-studio.js"></script>
+  <script src="js/roi-calculator.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/interactive.js"></script>
+</body>
+</html>
